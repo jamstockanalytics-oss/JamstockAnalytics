@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "scheme": "acme",
+    "plugins": [
+      "expo-router"
+    ],
+    "name": "JamStockAnalytics",
+    "slug": "jamstockanalytics",
+    "extra": {
+      "SUPABASE_URL": "",
+      "SUPABASE_ANON_KEY": "",
+      "eas": {
+        "projectId": "2241d06b-c07b-4ce2-8337-bc20021d2feb"
+      },
+      "router": {}
+    },
+    "owner": "junior876",
+    "android": {
+      "package": "com.junior876.jamstockanalytics"
+    }
+  }
+}
