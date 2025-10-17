@@ -91,7 +91,7 @@ jobs:
         echo "🔍 Validating required secrets..."
         
         # Core required secrets
-        local core_secrets_valid=true
+        core_secrets_valid=true
         
         if [[ -z "${SUPABASE_URL:-}" ]]; then
           echo "❌ SUPABASE_URL secret is missing"
