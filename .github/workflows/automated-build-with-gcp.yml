@@ -32,6 +32,9 @@ env:
   # Global environment variables with fallbacks
   SUPABASE_URL: ${{ secrets.SUPABASE_URL || '' }}
   SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || '' }}
+  SUPABASE_HOST: ${{ secrets.SUPABASE_HOST || '' }}
+  SUPABASE_PASSWORD: ${{ secrets.SUPABASE_PASSWORD || '' }}
+  LOCATION: ${{ secrets.LOCATION || '' }}
   DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY || '' }}
   EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || '' }}
   SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || '' }}
@@ -69,9 +72,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Validate GCP Service Account Key
+    - name: Install jq for GCP validation
       run: |
-        echo "🔍 Validating GCP service account key..."
+        echo "🔍 Installing jq for GCP validation..."
+        sudo apt-get update -y
+        sudo apt-get install -y jq
+
+    - name: Validate GCP Service Account Key (jq)
+      run: |
+        echo "🔍 Validating GCP service account key with jq..."
         if [[ -z "${{ secrets.GCP_SA_KEY }}" ]]; then
           echo "❌ GCP_SA_KEY secret is missing"
           exit 1
@@ -80,10 +89,55 @@ jobs:
         # Check if the JSON is valid
         echo "${{ secrets.GCP_SA_KEY }}" | jq empty
         if [ $? -eq 0 ]; then
-          echo "✅ GCP service account key JSON is valid"
+          echo "✅ GCP service account key JSON is valid (jq)"
         else
           echo "❌ GCP service account key JSON is invalid"
           echo "💡 Please check your GCP_SA_KEY secret format"
+          exit 1
+        fi
+
+    - name: Validate GCP Service Account Key (Node.js)
+      run: |
+        echo "🔍 Validating GCP service account key with Node.js..."
+        if [[ -z "${{ secrets.GCP_SA_KEY }}" ]]; then
+          echo "❌ GCP_SA_KEY secret is missing"
+          exit 1
+        fi
+        
+        # Check if the JSON is valid using Node.js
+        if node -e "try{JSON.parse(process.env.GCP_SA_KEY); console.log('✅ GCP service account key JSON is valid (Node.js)')}catch(e){console.log('❌ GCP service account key JSON is invalid'); process.exit(1)}"; then
+          echo "✅ Node.js validation passed"
+        else
+          echo "❌ Node.js validation failed"
+          exit 1
+        fi
+
+    - name: Install jq and validate GCP service account key
+      run: |
+        echo "🔍 Installing jq..."
+        sudo apt-get update -y
+        sudo apt-get install -y jq
+
+        echo "🔍 Checking GCP_SA_KEY presence..."
+        if [[ -z "${{ secrets.GCP_SA_KEY }}" ]]; then
+          echo "❌ GCP_SA_KEY is missing"
+          exit 1
+        fi
+
+        echo "🔍 Validating JSON parse..."
+        if ! echo "${{ secrets.GCP_SA_KEY }}" | jq empty >/dev/null 2>&1; then
+          echo "❌ GCP_SA_KEY is not valid JSON"
+          exit 1
+        else
+          echo "✅ GCP_SA_KEY is valid JSON"
+        fi
+
+        echo "🔍 Validating it's a service account key..."
+        if echo "${{ secrets.GCP_SA_KEY }}" | jq -e '.type == "service_account"' >/dev/null 2>&1; then
+          echo "✅ GCP_SA_KEY type == service_account"
+        else
+          echo "❌ GCP_SA_KEY JSON does not have type=service_account"
+          echo "🔎 You can inspect the parsed fields locally (don't print secrets in CI logs)"
           exit 1
         fi
         
