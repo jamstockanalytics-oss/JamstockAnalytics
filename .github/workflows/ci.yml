@@ -22,7 +22,14 @@ jobs:
     - name: Install dependencies
       run: |
         echo "🔧 Installing dependencies..."
-        npm ci --prefer-offline --no-audit
+        echo "📦 Checking package-lock.json..."
+        if [ -f "package-lock.json" ]; then
+          echo "✅ package-lock.json found"
+          npm ci --prefer-offline --no-audit
+        else
+          echo "⚠️  package-lock.json not found, running npm install"
+          npm install --prefer-offline --no-audit
+        fi
         echo "✅ Dependencies installed successfully"
     
     - name: Check required secrets

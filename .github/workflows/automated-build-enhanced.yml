@@ -75,14 +75,24 @@ jobs:
     - name: Verify Node.js installation
       run: |
         echo "🔍 Verifying Node.js installation..."
-        node --version
-        npm --version
+        echo "Node.js version: $(node --version)"
+        echo "npm version: $(npm --version)"
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
         echo "✅ Node.js setup verified"
     
     - name: Install dependencies
       run: |
         echo "🔧 Installing dependencies..."
-        npm ci --prefer-offline --no-audit
+        echo "📦 Checking package-lock.json..."
+        if [ -f "package-lock.json" ]; then
+          echo "✅ package-lock.json found"
+          npm ci --prefer-offline --no-audit
+        else
+          echo "⚠️  package-lock.json not found, running npm install"
+          npm install --prefer-offline --no-audit
+        fi
         echo "✅ Dependencies installed successfully"
     
     - name: Validate secrets and environment
