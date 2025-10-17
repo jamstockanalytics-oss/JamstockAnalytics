@@ -63,6 +63,22 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
+    - name: Check required secrets
+      run: |
+        if [[ -z "${{ secrets.SUPABASE_URL }}" ]]; then
+          echo "❌ SUPABASE_URL secret is missing"
+          exit 1
+        fi
+        if [[ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]]; then
+          echo "❌ SUPABASE_ANON_KEY secret is missing"
+          exit 1
+        fi
+        if [[ -z "${{ secrets.DEEPSEEK_API_KEY }}" ]]; then
+          echo "❌ DEEPSEEK_API_KEY secret is missing"
+          exit 1
+        fi
+        echo "✅ All required secrets are present"
+    
     - name: Setup environment
       run: node scripts/auto-setup-env.js
       env:
@@ -128,11 +144,16 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Setup Expo CLI
-      run: npm install -g @expo/cli eas-cli
+    - name: Setup Expo CLI and EAS CLI
+      run: |
+        npm install -g @expo/cli
+        npm install -g eas-cli@latest
     
     - name: Build Android
-      run: eas build --platform android --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
+      run: |
+        echo "🚀 Starting Android build..."
+        eas build --platform android --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
+        echo "✅ Android build completed"
       env:
         EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -155,11 +176,16 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Setup Expo CLI
-      run: npm install -g @expo/cli eas-cli
+    - name: Setup Expo CLI and EAS CLI
+      run: |
+        npm install -g @expo/cli
+        npm install -g eas-cli@latest
     
     - name: Build iOS
-      run: eas build --platform ios --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
+      run: |
+        echo "🚀 Starting iOS build..."
+        eas build --platform ios --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
+        echo "✅ iOS build completed"
       env:
         EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -211,8 +237,10 @@ jobs:
     - name: Install dependencies
       run: npm ci
     
-    - name: Setup Expo CLI
-      run: npm install -g @expo/cli eas-cli
+    - name: Setup Expo CLI and EAS CLI
+      run: |
+        npm install -g @expo/cli
+        npm install -g eas-cli@latest
     
     - name: Deploy to Expo
       run: npm run deploy:auto
