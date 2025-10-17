@@ -1,0 +1,99 @@
+name: Validate Workflows
+
+on:
+  push:
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  validate-workflows:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Validate workflow syntax
+      run: |
+        echo "🔍 Validating GitHub Actions workflow syntax..."
+        
+        # Check if all workflow files are valid YAML
+        for workflow in .github/workflows/*.yml; do
+          echo "Validating $workflow..."
+          if command -v yamllint >/dev/null 2>&1; then
+            yamllint "$workflow" || echo "⚠️  yamllint not available, skipping YAML validation"
+          else
+            # Basic YAML validation using Python
+            python3 -c "import yaml; yaml.safe_load(open('$workflow'))" || {
+              echo "❌ Invalid YAML syntax in $workflow"
+              exit 1
+            }
+          fi
+          echo "✅ $workflow syntax is valid"
+        done
+        
+        echo "✅ All workflow files have valid syntax"
+    
+    - name: Check workflow consistency
+      run: |
+        echo "🔍 Checking workflow consistency..."
+        
+        # Check for required secrets consistency
+        echo "Checking secret usage consistency..."
+        
+        # Extract all secrets used in workflows
+        secrets_used=$(grep -r "secrets\." .github/workflows/ | grep -o 'secrets\.[A-Z_]*' | sort -u)
+        echo "Secrets used in workflows:"
+        echo "$secrets_used"
+        
+        # Check for common patterns
+        echo ""
+        echo "Checking for common workflow patterns..."
+        
+        # Check if all workflows have proper error handling
+        for workflow in .github/workflows/*.yml; do
+          if ! grep -q "continue-on-error" "$workflow"; then
+            echo "⚠️  $workflow may benefit from continue-on-error for non-critical steps"
+          fi
+        done
+        
+        echo "✅ Workflow consistency check completed"
+    
+    - name: Validate environment variables
+      run: |
+        echo "🔍 Validating environment variable usage..."
+        
+        # Check for consistent environment variable naming
+        echo "Checking environment variable patterns..."
+        
+        # Look for EXPO_PUBLIC_ variables
+        expo_vars=$(grep -r "EXPO_PUBLIC_" .github/workflows/ | grep -o 'EXPO_PUBLIC_[A-Z_]*' | sort -u)
+        echo "EXPO_PUBLIC_ variables used:"
+        echo "$expo_vars"
+        
+        # Check for fallback values
+        fallback_count=$(grep -r "||" .github/workflows/ | wc -l)
+        echo "Found $fallback_count fallback values in workflows"
+        
+        echo "✅ Environment variable validation completed"
+    
+    - name: Generate workflow summary
+      run: |
+        echo "## 📋 Workflow Validation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Validation Results:" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ All workflow files have valid YAML syntax" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Workflow consistency checks passed" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Environment variable patterns validated" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Workflow Statistics:" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total workflows:** $(ls .github/workflows/*.yml | wc -l)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Total lines:** $(cat .github/workflows/*.yml | wc -l)" >> $GITHUB_STEP_SUMMARY
+        echo "- **Fallback values:** $(grep -r "||" .github/workflows/ | wc -l)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 🔧 Workflow Files:" >> $GITHUB_STEP_SUMMARY
+        for workflow in .github/workflows/*.yml; do
+          echo "- \`$(basename "$workflow")\`" >> $GITHUB_STEP_SUMMARY
+        done

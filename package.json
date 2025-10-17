@@ -38,6 +38,7 @@
     "test-all-ai-features": "node scripts/test-all-ai-features.js",
     "test:environment": "node scripts/test-environment.js",
     "setup:ci": "node scripts/setup-ci.js",
+    "test:ci": "node scripts/ci-test.js",
     "start:web": "npx expo start --web --clear",
     "build:web": "npx expo export --platform web",
     "db:monitor": "node scripts/database-monitoring.js",

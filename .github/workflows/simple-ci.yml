@@ -27,23 +27,15 @@ jobs:
         echo "Creating test environment file..."
         echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}" > .env
         echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'test-key' }}" >> .env
-        echo "EXPO_PUBLIC_DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY || 'test-key' }}" >> .env
+        echo "EXPO_PUBLIC_DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY || 'disabled' }}" >> .env
         echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'test-service-key' }}" >> .env
         echo "NODE_ENV=test" >> .env
         echo "✅ Environment file created"
         echo "📄 Environment file contents:"
         cat .env
     
-    - name: Test CI setup script
-      run: npm run setup:ci
-      continue-on-error: true
-    
-    - name: Test AI features
-      run: npm run test-all-ai-features
-      continue-on-error: true
-    
-    - name: Test environment
-      run: npm run test:environment
+    - name: Run CI tests
+      run: npm run test:ci
       continue-on-error: true
 
   build-check:
@@ -68,7 +60,7 @@ jobs:
         echo "Creating build environment file..."
         echo "EXPO_PUBLIC_SUPABASE_URL=${{ secrets.SUPABASE_URL || 'https://test.supabase.co' }}" > .env
         echo "EXPO_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY || 'test-key' }}" >> .env
-        echo "EXPO_PUBLIC_DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY || 'test-key' }}" >> .env
+        echo "EXPO_PUBLIC_DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY || 'disabled' }}" >> .env
         echo "NODE_ENV=production" >> .env
         echo "✅ Build environment file created"
         echo "📄 Environment file contents:"
