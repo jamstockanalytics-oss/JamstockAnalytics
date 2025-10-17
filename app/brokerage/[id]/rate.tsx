@@ -1,7 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Card, Button, TextInput, ActivityIndicator, Divider } from "react-native-paper";
+import { Text, Card, Button, TextInput, ActivityIndicator } from "react-native-paper";
 import { getBrokerageById, type BrokerageCompany } from "../../../lib/services/brokerage-service";
 import { submitRating, getUserRating, type RatingSubmission } from "../../../lib/services/rating-service";
 import { useAuth } from "../../../contexts/AuthContext";
@@ -67,7 +67,7 @@ export default function RateBrokerageScreen() {
         brokerage_id: id,
         user_id: session.user.id,
         rating: overallRating,
-        review_text: reviewText.trim() || undefined,
+        review_text: reviewText.trim() || '',
         categories: categoryRatings
       };
 

@@ -1,19 +1,19 @@
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Button, Card, Chip, Divider, ProgressBar } from "react-native-paper";
-import { Link, useRouter, useLocalSearchParams } from "expo-router";
-import { useState, useEffect } from "react";
+import { Text, Button, Card, Chip, Divider } from "react-native-paper";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { useState } from "react";
 import { SimpleLogo } from "../../components/SimpleLogo";
 
 export default function SessionCompleteScreen() {
   const router = useRouter();
-  const { sessionId, duration, articlesAnalyzed, template } = useLocalSearchParams<{
+  const { duration, articlesAnalyzed, template } = useLocalSearchParams<{
     sessionId?: string;
     duration?: string;
     articlesAnalyzed?: string;
     template?: string;
   }>();
 
-  const [sessionData, setSessionData] = useState({
+  const [sessionData] = useState({
     duration: duration || "25 minutes",
     articlesAnalyzed: parseInt(articlesAnalyzed || "3"),
     template: template || "bullish_thesis",

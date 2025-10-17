@@ -18,7 +18,7 @@ export function SimpleLogo({ size = 'medium', showText = true }: SimpleLogoProps
     }
   };
 
-  const { circle, fontSize, textSize } = getSize();
+  const { circle, textSize } = getSize();
 
   return (
     <View style={styles.container}>

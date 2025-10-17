@@ -1,4 +1,5 @@
-import { fetchJSEData, getJSEMarketStatus, isJSEMarketOpen } from './jse-data-service';
+import { fetchRealJSEData, getJSEMarketStatus, isJSEMarketOpen } from './real-jse-data-service';
+import { fetchJSEData } from './jse-data-service';
 
 export interface MarketUpdateEvent {
   type: 'market_open' | 'market_close' | 'data_update' | 'price_alert';
@@ -12,7 +13,7 @@ export interface MarketUpdateCallback {
 }
 
 class MarketUpdateService {
-  private updateInterval: NodeJS.Timeout | null = null;
+  private updateInterval: number | null = null;
   private callbacks: MarketUpdateCallback[] = [];
   private lastMarketStatus: boolean | null = null;
   private isRunning: boolean = false;
@@ -22,13 +23,10 @@ class MarketUpdateService {
    */
   start(): void {
     if (this.isRunning) {
-      console.log('Market update service is already running');
       return;
     }
 
     this.isRunning = true;
-    console.log('Starting market update service...');
-
     // Check market status immediately
     this.checkMarketStatus();
 
@@ -54,8 +52,7 @@ class MarketUpdateService {
       this.updateInterval = null;
     }
     this.isRunning = false;
-    console.log('Market update service stopped');
-  }
+    }
 
   /**
    * Add a callback for market update events
@@ -116,7 +113,7 @@ class MarketUpdateService {
    */
   private async fetchMarketData(): Promise<void> {
     try {
-      const marketData = await fetchJSEData();
+      const marketData = await fetchRealJSEData();
       
       this.emitEvent({
         type: 'data_update',
@@ -125,8 +122,7 @@ class MarketUpdateService {
         message: 'Market data updated'
       });
 
-      console.log('Market data updated successfully');
-    } catch (error) {
+      } catch (error) {
       console.error('Error fetching market data:', error);
     }
   }
@@ -204,11 +200,10 @@ export function getMarketUpdateStatus(): { isRunning: boolean; lastUpdate: strin
  */
 export async function triggerMarketUpdate(): Promise<void> {
   try {
-    const marketData = await fetchJSEData();
+    await fetchJSEData();
     marketUpdateService.addCallback((event) => {
       if (event.type === 'data_update') {
-        console.log('Manual market update triggered');
-      }
+        }
     });
   } catch (error) {
     console.error('Error triggering manual market update:', error);

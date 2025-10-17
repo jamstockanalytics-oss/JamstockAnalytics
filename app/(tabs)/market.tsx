@@ -1,15 +1,26 @@
 import { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
-import { Text, Card, Chip, ActivityIndicator, Button, ProgressBar } from "react-native-paper";
+import { Text, Card, Chip, ActivityIndicator, Button, IconButton } from "react-native-paper";
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { useMarketData } from "../../lib/hooks/useMarketData";
-import { getTopGainers, getTopLosers, getMostActive } from "../../lib/services/jse-data-service";
+import { useRealtimeUpdates } from "../../lib/hooks/useRealtimeUpdates";
 import { SimpleLogo } from "../../components/SimpleLogo";
+import { AnimatedPrice } from "../../components/market/AnimatedPrice";
+import { FullScrollContainer } from "../../components/FullScrollContainer";
+import { SideNavigation } from "../../components/SideNavigation";
+import { MarketChartContainer } from "../../components/charts";
+import { MarketChartService } from "../../lib/services/market-chart-service";
+import { ArticleShareButton } from "../../components/social";
 
 export default function MarketScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'all' | 'gainers' | 'losers' | 'active'>('all');
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [sideNavOpen, setSideNavOpen] = useState(false);
+  const [chartData, setChartData] = useState<any>(null);
+  const [chartLoading, setChartLoading] = useState(false);
   
   const {
     marketData,
@@ -17,27 +28,61 @@ export default function MarketScreen() {
     marketStatus,
     loading,
     refreshing,
-    refresh,
     isMarketOpen,
     lastUpdate
   } = useMarketData();
 
-  const onRefresh = () => {
-    refresh();
-  };
+  // Real-time updates
+  const {
+    isConnected,
+    nextUpdate,
+    refreshData: forceRefresh
+  } = useRealtimeUpdates();
 
-  const getFilteredData = async () => {
-    switch (activeTab) {
-      case 'gainers':
-        return await getTopGainers();
-      case 'losers':
-        return await getTopLosers();
-      case 'active':
-        return await getMostActive();
-      default:
-        return marketData;
+  const onRefresh = async () => {
+    try {
+      setError(null);
+      await forceRefresh(); // Use real-time refresh
+      setRetryCount(0);
+      await loadChartData();
+    } catch (err) {
+      setError('Failed to refresh market data');
+      setRetryCount(prev => prev + 1);
     }
   };
+
+  const loadChartData = async () => {
+    try {
+      setChartLoading(true);
+      const { data: summaryData, error } = await MarketChartService.getMarketSummary();
+      if (error) {
+        console.error('Failed to load chart data:', error);
+        return;
+      }
+      
+      if (summaryData) {
+        // Create chart data from market summary
+        const chartData = {
+          labels: ['Gainers', 'Losers', 'Unchanged'],
+          datasets: [{
+            data: [summaryData.gainers, summaryData.losers, summaryData.unchanged],
+            color: (opacity = 1) => `rgba(52, 152, 219, ${opacity})`,
+          }],
+        };
+        setChartData(chartData);
+      }
+    } catch (error) {
+      console.error('Failed to load chart data:', error);
+    } finally {
+      setChartLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadChartData();
+  }, []);
+
+
 
   const getChangeColor = (change: number) => {
     if (change > 0) return '#4CAF50';
@@ -76,10 +121,73 @@ export default function MarketScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
+        <IconButton
+          icon="menu"
+          size={24}
+          onPress={() => setSideNavOpen(true)}
+        />
         <SimpleLogo size="medium" showText={false} />
         <Text variant="headlineMedium">JSE Market</Text>
-        <Text variant="bodyMedium">Real-time trading data</Text>
+        <IconButton
+          icon="refresh"
+          size={24}
+          onPress={onRefresh}
+        />
       </View>
+      
+      <FullScrollContainer
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <View style={styles.marketInfo}>
+          <Text variant="bodyMedium" style={styles.marketDescription}>Real-time trading data</Text>
+          
+          {/* Real-time Status Indicator */}
+          <View style={styles.realtimeStatusContainer}>
+            <View style={[styles.connectionIndicator, { backgroundColor: isConnected ? '#4CAF50' : '#F44336' }]} />
+            <Text variant="bodySmall" style={styles.realtimeStatusText}>
+              {isConnected ? 'Connected' : 'Disconnected'} • Next update in {nextUpdate}s
+            </Text>
+          </View>
+          
+          {lastUpdate && (
+            <View style={styles.lastUpdateContainer}>
+              <View style={[styles.liveIndicator, { backgroundColor: isMarketOpen ? '#4CAF50' : '#F44336' }]} />
+              <Text variant="bodySmall" style={styles.lastUpdateText}>
+                Last update: {new Date(lastUpdate).toLocaleTimeString()}
+              </Text>
+            </View>
+          )}
+        </View>
+
+      {/* Error Display */}
+      {error && (
+        <Card style={[styles.errorCard, { backgroundColor: '#FFEBEE' }]}>
+          <Card.Content>
+            <View style={styles.errorContainer}>
+              <Text variant="bodyMedium" style={styles.errorText}>
+                {error}
+              </Text>
+              {retryCount > 0 && (
+                <Text variant="bodySmall" style={styles.retryText}>
+                  Retry attempt: {retryCount}
+                </Text>
+              )}
+              <View style={styles.errorActions}>
+                <Button
+                  mode="outlined"
+                  onPress={onRefresh}
+                  style={styles.retryButton}
+                  compact
+                >
+                  Retry
+                </Button>
+              </View>
+            </View>
+          </Card.Content>
+        </Card>
+      )}
 
       {/* Market Status */}
       {marketStatus && (
@@ -157,6 +265,19 @@ export default function MarketScreen() {
         </Card>
       )}
 
+      {/* Market Charts */}
+      {chartData && (
+        <MarketChartContainer
+          data={chartData}
+          title="Market Overview"
+          subtitle="Stock performance distribution"
+          showDesignSelector={true}
+          showTypeSelector={true}
+          defaultDesign="professional"
+          loading={chartLoading}
+        />
+      )}
+
       {/* Tab Navigation */}
       <View style={styles.tabContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -195,7 +316,6 @@ export default function MarketScreen() {
       <FlashList
         data={marketData}
         keyExtractor={(item) => item.symbol}
-        estimatedItemSize={80}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
@@ -213,12 +333,14 @@ export default function MarketScreen() {
                   </Text>
                 </View>
                 <View style={styles.stockPrice}>
-                  <Text variant="titleLarge" style={styles.priceText}>
-                    {formatCurrency(item.last_price)}
-                  </Text>
-                  <Text variant="bodySmall" style={[styles.changeText, { color: getChangeColor(item.change) }]}>
-                    {getChangeIcon(item.change)} {formatCurrency(Math.abs(item.change))} ({item.change_percent.toFixed(2)}%)
-                  </Text>
+                  <AnimatedPrice
+                    price={item.last_price}
+                    change={item.change}
+                    changePercent={item.change_percent}
+                    size="medium"
+                    showChange={true}
+                    showPercent={true}
+                  />
                 </View>
               </View>
               
@@ -240,10 +362,30 @@ export default function MarketScreen() {
                   <Text variant="bodySmall">{formatCurrency(item.open)}</Text>
                 </View>
               </View>
+              
+              {/* Social Sharing */}
+              <View style={styles.shareSection}>
+                <ArticleShareButton
+                  article={{
+                    id: item.symbol,
+                    headline: `${item.symbol} Stock Update`,
+                    summary: `${item.symbol} is currently trading at ${formatCurrency(item.last_price)} with a ${item.change > 0 ? 'gain' : 'loss'} of ${formatCurrency(Math.abs(item.change))} (${item.change_percent.toFixed(2)}%)`,
+                    url: `https://jamstockanalytics.com/stock/${item.symbol}`,
+                    source: 'JamStockAnalytics',
+                    publishedAt: new Date().toISOString(),
+                    aiPriorityScore: Math.random() * 10,
+                    companyTickers: [item.symbol],
+                  }}
+                  variant="inline"
+                  onShare={(platform) => console.log(`Stock ${item.symbol} shared to ${platform}`)}
+                />
+              </View>
             </Card.Content>
           </Card>
         )}
       />
+
+      </FullScrollContainer>
 
       {/* Action Buttons */}
       <View style={styles.actionsContainer}>
@@ -264,6 +406,15 @@ export default function MarketScreen() {
           Market Chat
         </Button>
       </View>
+      
+      <SideNavigation
+        isOpen={sideNavOpen}
+        onClose={() => setSideNavOpen(false)}
+      >
+        <Text variant="bodyMedium" style={styles.sideNavText}>
+          Navigate to different sections of the app
+        </Text>
+      </SideNavigation>
     </View>
   );
 }
@@ -380,5 +531,84 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     flex: 1,
+  },
+  realtimeStatusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 16,
+    alignSelf: 'center',
+  },
+  connectionIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  realtimeStatusText: {
+    color: '#666',
+    fontSize: 12,
+  },
+  lastUpdateContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  liveIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 8,
+  },
+  lastUpdateText: {
+    color: '#666',
+  },
+  errorCard: {
+    margin: 16,
+    marginBottom: 8,
+  },
+  errorContainer: {
+    alignItems: 'center',
+  },
+  errorText: {
+    color: '#D32F2F',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  retryText: {
+    color: '#666',
+    marginBottom: 12,
+  },
+  errorActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  retryButton: {
+    borderColor: '#D32F2F',
+  },
+  smartRetryButton: {
+    backgroundColor: '#2563eb',
+  },
+  sideNavText: {
+    color: '#666',
+    textAlign: 'center',
+  },
+  marketInfo: {
+    padding: 16,
+    alignItems: 'center',
+    gap: 8,
+  },
+  marketDescription: {
+    color: '#666666',
+    textAlign: 'center',
+  },
+  shareSection: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });

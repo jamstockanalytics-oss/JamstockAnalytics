@@ -1,13 +1,15 @@
-import { Stack, Slot } from "expo-router";
+import { Stack } from "expo-router";
 import { Provider as PaperProvider } from "react-native-paper";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { View } from "react-native";
 import { ActivityIndicator } from "react-native-paper";
 import { AppTheme } from "../constants/Theme";
+import { startRealtimeRefresh } from "../lib/services/realtime-refresh-service";
+import { useEffect } from "react";
 
 function RootNav() {
-  const { loading, session, isGuest } = useAuth();
+  const { loading } = useAuth();
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -17,11 +19,8 @@ function RootNav() {
   }
   return (
     <Stack>
-      {(session || isGuest) ? (
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      ) : (
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      )}
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
       <Stack.Screen name="+not-found" options={{ title: "Not Found" }} />
       <Stack.Screen name="article/[id]" options={{ title: "Article" }} />
       <Stack.Screen name="analysis-session/[id]" options={{ title: "Analysis Session" }} />
@@ -31,6 +30,12 @@ function RootNav() {
 }
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Start real-time refresh service when app loads
+    console.log('Starting real-time refresh service...');
+    startRealtimeRefresh();
+  }, []);
+
   return (
     <SafeAreaProvider>
       <PaperProvider theme={AppTheme}>

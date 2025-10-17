@@ -120,7 +120,7 @@ export function getJSEMarketStatus(): JSEMarketStatus {
     },
     next_open: isOpen ? undefined : nextOpen.toISOString(),
     next_close: isOpen ? nextClose.toISOString() : undefined,
-    trading_day: jamaicaTime.toISOString().split('T')[0]
+    trading_day: jamaicaTime.toISOString().split('T')[0] || jamaicaTime.toLocaleDateString('en-CA')
   };
 }
 
@@ -231,7 +231,7 @@ export async function fetchJSEData(): Promise<JSETradingSession> {
     const marketStatus = getJSEMarketStatus();
     
     return {
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('en-CA'),
       status: marketStatus.is_open ? 'open' : 'closed',
       last_update: new Date().toISOString(),
       stocks: mockStocks,
@@ -363,7 +363,7 @@ export async function getHistoricalData(
       const price = basePrice * (1 + randomChange);
       
       historicalData.push({
-        date: date.toISOString().split('T')[0],
+        date: date.toISOString().split('T')[0] || date.toLocaleDateString('en-CA'),
         price: Math.round(price * 100) / 100,
         volume: Math.floor(Math.random() * 100000) + 10000
       });
@@ -384,7 +384,7 @@ export function setupAutomaticUpdates(
   onMarketOpen: () => void,
   onMarketClose: () => void,
   onDataUpdate: (data: JSETradingSession) => void
-): void {
+): () => void {
   // Check market status every minute
   const interval = setInterval(async () => {
     try {

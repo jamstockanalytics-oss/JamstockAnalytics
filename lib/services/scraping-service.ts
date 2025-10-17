@@ -51,15 +51,11 @@ export class ScrapingService {
     const articles: ScrapedArticle[] = [];
     const errors: string[] = [];
 
-    console.log('🔍 Starting article scraping...');
-
     for (const source of this.config.sources) {
       try {
-        console.log(`📰 Scraping from ${source}...`);
         const sourceArticles = await this.scrapeSource(source);
         articles.push(...sourceArticles);
-        console.log(`✅ Scraped ${sourceArticles.length} articles from ${source}`);
-      } catch (error) {
+        } catch (error) {
         const errorMsg = `Failed to scrape ${source}: ${error}`;
         console.error(`❌ ${errorMsg}`);
         errors.push(errorMsg);
@@ -170,8 +166,7 @@ export class ScrapingService {
         throw new Error(`Storage error: ${storageError.message}`);
       }
 
-      console.log(`✅ Stored article: ${article.headline}`);
-    } catch (error) {
+      } catch (error) {
       console.error(`❌ Error storing article ${article.id}: ${error}`);
       throw error;
     }
@@ -181,8 +176,6 @@ export class ScrapingService {
    * Process articles with AI analysis
    */
   async processArticlesWithAI(): Promise<void> {
-    console.log('🤖 Processing articles with AI...');
-
     try {
       // Get unprocessed articles
       const { data: articles, error } = await supabase
@@ -196,11 +189,8 @@ export class ScrapingService {
       }
 
       if (!articles || articles.length === 0) {
-        console.log('ℹ️  No unprocessed articles found');
         return;
       }
-
-      console.log(`📊 Processing ${articles.length} articles...`);
 
       for (const article of articles) {
         try {
@@ -224,8 +214,7 @@ export class ScrapingService {
           if (updateError) {
             console.error(`❌ Error updating article ${article.id}: ${updateError.message}`);
           } else {
-            console.log(`✅ Processed article: ${article.headline}`);
-          }
+            }
         } catch (error) {
           console.error(`❌ Error processing article ${article.id}: ${error}`);
         }
@@ -257,11 +246,9 @@ export class ScrapingService {
    * Scrape and store market data
    */
   async scrapeMarketData(): Promise<void> {
-    console.log('📈 Scraping market data...');
-
     try {
       const marketData: MarketData = {
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString().split('T')[0] || new Date().toLocaleDateString('en-CA'),
         jse_index: 125.5 + (Math.random() - 0.5) * 10,
         volume: 1500000 + Math.floor(Math.random() * 500000),
         top_gainers: ['NCBFG', 'SGJ', 'GHL'],
@@ -284,8 +271,7 @@ export class ScrapingService {
         throw new Error(`Storage error: ${error.message}`);
       }
 
-      console.log(`✅ Stored market data for ${marketData.date}`);
-    } catch (error) {
+      } catch (error) {
       console.error(`❌ Error scraping market data: ${error}`);
     }
   }
@@ -294,8 +280,6 @@ export class ScrapingService {
    * Generate AI analysis and store results
    */
   async generateAIAnalysis(): Promise<void> {
-    console.log('🧠 Generating AI analysis...');
-
     try {
       const analysis = {
         analysis_id: `analysis-${Date.now()}`,
@@ -329,8 +313,7 @@ export class ScrapingService {
         throw new Error(`Storage error: ${error.message}`);
       }
 
-      console.log(`✅ Generated AI analysis: ${analysis.analysis_id}`);
-    } catch (error) {
+      } catch (error) {
       console.error(`❌ Error generating AI analysis: ${error}`);
     }
   }
@@ -339,33 +322,24 @@ export class ScrapingService {
    * Run complete scraping and processing pipeline
    */
   async runScrapingPipeline(): Promise<void> {
-    console.log('🚀 Starting complete scraping pipeline...\n');
-
     try {
       // Step 1: Scrape articles
-      console.log('📰 Step 1: Scraping articles...');
       const { articles, errors } = await this.scrapeArticles();
-      console.log(`✅ Scraped ${articles.length} articles`);
       if (errors.length > 0) {
-        console.log(`⚠️  ${errors.length} errors occurred`);
-      }
+        }
 
       // Step 2: Process articles with AI
       if (this.config.enableAIProcessing) {
-        console.log('\n🤖 Step 2: Processing articles with AI...');
         await this.processArticlesWithAI();
       }
 
       // Step 3: Scrape market data
-      console.log('\n📈 Step 3: Scraping market data...');
       await this.scrapeMarketData();
 
       // Step 4: Generate AI analysis
-      console.log('\n🧠 Step 4: Generating AI analysis...');
       await this.generateAIAnalysis();
 
-      console.log('\n🎉 Scraping pipeline completed successfully!');
-    } catch (error) {
+      } catch (error) {
       console.error(`❌ Scraping pipeline failed: ${error}`);
       throw error;
     }

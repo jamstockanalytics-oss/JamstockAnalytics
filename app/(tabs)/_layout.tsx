@@ -67,6 +67,15 @@ export default function TabsLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="auth"
+        options={{
+          title: "Login",
+          tabBarIcon: ({ color, size }) => (
+            <MaterialIcons name="login" size={size} color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

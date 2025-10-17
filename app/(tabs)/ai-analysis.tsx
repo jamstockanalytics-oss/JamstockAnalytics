@@ -1,18 +1,17 @@
 import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Button, Card, Chip, ProgressBar, Divider, Surface } from "react-native-paper";
+import { Text, Button, Card, Chip, ProgressBar, Surface } from "react-native-paper";
 import { Link } from "expo-router";
-import { useState, useEffect } from "react";
-import { ProModeGate } from "../../components/ProModeGate";
+import { useState } from "react";
 
 export default function AIAnalysisScreen() {
-  const [marketSentiment, setMarketSentiment] = useState({
+  const [marketSentiment] = useState({
     overall: 0.65,
     bullish: 0.45,
     bearish: 0.35,
     neutral: 0.20
   });
 
-  const [redFlags, setRedFlags] = useState([
+  const [redFlags] = useState([
     {
       id: 1,
       company: "NCB Financial Group",
@@ -58,8 +57,7 @@ export default function AIAnalysisScreen() {
   };
 
   return (
-    <ProModeGate feature="AI Market Analysis">
-      <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}>
         <View style={styles.header}>
           <Text variant="headlineMedium" style={styles.title}>
             AI Market Analysis
@@ -228,7 +226,6 @@ export default function AIAnalysisScreen() {
         </Button>
       </View>
     </ScrollView>
-    </ProModeGate>
   );
 }
 
@@ -239,7 +236,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 16,
-    backgroundColor: '#667eea',
+    backgroundColor: '#2563eb',
     alignItems: 'center',
   },
   title: {

@@ -88,8 +88,6 @@ export default function SignupScreen() {
         Create Account
       </Button>
 
-      {/* Temporarily disabled Google auth until Supabase provider is configured */}
-      {/* 
       <View style={styles.dividerContainer}>
         <Divider style={styles.divider} />
         <Text variant="bodySmall" style={styles.dividerText}>OR</Text>
@@ -106,7 +104,6 @@ export default function SignupScreen() {
       >
         Continue with Google
       </Button>
-      */}
       
       <Link href="/(auth)/login" asChild>
         <Button style={styles.linkButton}>

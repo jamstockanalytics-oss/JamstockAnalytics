@@ -1,85 +1,84 @@
 import { supabase } from "../supabase/client";
-import { analyzeNewsArticle, generateNewsSummary } from "./ai-service";
+import { analyzeNewsArticle } from "./ai-service";
+import { 
+  fetchAllNewsArticles, 
+  getNewsArticles, 
+  getNewsArticlesByTicker, 
+  getNewsArticlesByCategory, 
+  searchNewsArticles,
+  NewsArticle 
+} from './comprehensive-news-service';
 
-export type Article = {
-  id: string;
-  headline: string;
-  source: string;
-  url?: string | null;
-  publication_date: string;
-  ai_priority_score: number | null;
-  ai_summary: string | null;
-  company_tickers: string[] | null;
-  content?: string | null;
-};
+export type Article = NewsArticle;
 
 export async function fetchArticles(): Promise<Article[]> {
-  const { data, error } = await supabase
-    .from("articles")
-    .select(
-      "id, headline, source, url, publication_date, ai_priority_score, ai_summary, company_tickers, content"
-    )
-    .order("ai_priority_score", { ascending: false, nullsFirst: false })
-    .order("publication_date", { ascending: false });
-
-  if (error) {
-    // Return sample data with AI analysis
+  try {
+    // Use the comprehensive news service to fetch real articles
+    const articles = await fetchAllNewsArticles();
+    return articles;
+  } catch (error) {
+    console.error('Error fetching articles:', error);
+    // Return fallback data if comprehensive service fails
     return [
       {
         id: "fallback-1",
         headline: "BOJ maintains interest rates, signals cautious approach to inflation",
+        content: "Bank of Jamaica maintains current interest rates while monitoring inflation trends. This decision impacts JSE-listed financial institutions and overall market sentiment.",
         source: "Jamaica Observer",
-        url: null,
-        publication_date: new Date().toISOString(),
+        url: "",
+        published_at: new Date().toISOString(),
         ai_priority_score: 8.4,
         ai_summary: "Bank of Jamaica maintains current interest rates while monitoring inflation trends. This decision impacts JSE-listed financial institutions and overall market sentiment.",
         company_tickers: ["JSE:NCBFG", "JSE:SGJ", "JSE:JMMB"],
+        tags: ["banking", "interest-rates", "inflation"],
+        sentiment_score: 0.2,
+        relevance_score: 0.9,
+        metadata: {
+          word_count: 45,
+          reading_time: 1,
+          author: "Financial Reporter"
+        }
       },
       {
         id: "fallback-2",
         headline: "JSE trading volume increases 15% amid foreign investor interest",
+        content: "Jamaica Stock Exchange sees significant trading volume increase driven by foreign investor confidence in local market stability.",
         source: "Gleaner Business",
-        url: null,
-        publication_date: new Date(Date.now() - 86400000).toISOString(),
+        url: "",
+        published_at: new Date(Date.now() - 86400000).toISOString(),
         ai_priority_score: 7.2,
         ai_summary: "Jamaica Stock Exchange sees significant trading volume increase driven by foreign investor confidence in local market stability.",
         company_tickers: ["JSE:NCBFG", "JSE:SGJ"],
+        tags: ["trading", "volume", "foreign-investment"],
+        sentiment_score: 0.7,
+        relevance_score: 0.8,
+        metadata: {
+          word_count: 42,
+          reading_time: 1,
+          author: "Market Reporter"
+        }
       },
       {
         id: "fallback-3",
         headline: "Tourism sector shows strong recovery with 25% growth in Q3",
+        content: "Tourism sector demonstrates robust recovery with significant growth in visitor arrivals and hotel occupancy rates.",
         source: "Jamaica Gleaner",
-        url: null,
-        publication_date: new Date(Date.now() - 172800000).toISOString(),
+        url: "",
+        published_at: new Date(Date.now() - 172800000).toISOString(),
         ai_priority_score: 6.8,
         ai_summary: "Tourism sector demonstrates robust recovery with significant growth in visitor arrivals and hotel occupancy rates.",
         company_tickers: ["JSE:JMMB"],
+        tags: ["tourism", "recovery", "growth"],
+        sentiment_score: 0.8,
+        relevance_score: 0.7,
+        metadata: {
+          word_count: 38,
+          reading_time: 1,
+          author: "Tourism Reporter"
+        }
       },
     ];
   }
-
-  // Process articles with AI analysis if needed
-  const articles = (data as Article[]) ?? [];
-  
-  // For articles without AI analysis, generate it
-  for (const article of articles) {
-    if (!article.ai_summary && article.headline) {
-      try {
-        const summary = await generateNewsSummary(article.headline);
-        // Update the article in the database
-        await supabase
-          .from("articles")
-          .update({ ai_summary: summary })
-          .eq("id", article.id);
-        
-        article.ai_summary = summary;
-      } catch (error) {
-        console.error('AI summary generation failed:', error);
-      }
-    }
-  }
-
-  return articles;
 }
 
 export async function fetchArticleById(id: string): Promise<Article | null> {
@@ -93,7 +92,7 @@ export async function fetchArticleById(id: string): Promise<Article | null> {
     .maybeSingle();
 
   if (error) return null;
-  return (data as Article) ?? null;
+  return data as unknown as NewsArticle | null;
 }
 
 export async function saveArticle(userId: string, articleId: string) {
@@ -139,7 +138,7 @@ export async function analyzeArticleWithAI(articleId: string): Promise<Article |
     const analysis = await analyzeNewsArticle(
       article.headline,
       article.content || article.headline,
-      article.publication_date
+      article.published_at
     );
 
     // Update the article in the database
@@ -176,6 +175,43 @@ export async function getMarketInsights(): Promise<string> {
   } catch (error) {
     console.error('Failed to get market insights:', error);
     return 'Market insights are being updated. Stay informed about current market conditions.';
+  }
+}
+
+// Additional functions using comprehensive news service
+export async function getArticles(limit?: number, offset?: number): Promise<Article[]> {
+  try {
+    return await getNewsArticles(limit, offset);
+  } catch (error) {
+    console.error('Error getting articles:', error);
+    throw error;
+  }
+}
+
+export async function getArticlesByTicker(ticker: string, limit?: number): Promise<Article[]> {
+  try {
+    return await getNewsArticlesByTicker(ticker, limit);
+  } catch (error) {
+    console.error('Error getting articles by ticker:', error);
+    throw error;
+  }
+}
+
+export async function getArticlesByCategory(category: string, limit?: number): Promise<Article[]> {
+  try {
+    return await getNewsArticlesByCategory(category, limit);
+  } catch (error) {
+    console.error('Error getting articles by category:', error);
+    throw error;
+  }
+}
+
+export async function searchArticles(query: string, limit?: number): Promise<Article[]> {
+  try {
+    return await searchNewsArticles(query, limit);
+  } catch (error) {
+    console.error('Error searching articles:', error);
+    throw error;
   }
 }
 

@@ -1,0 +1,27 @@
+name: nightly-analyze
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # run daily at 03:00 UTC (adjust as needed)
+  workflow_dispatch:
+
+jobs:
+  run-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase Edge Function to ANALYZE tables
+        env:
+          EDGE_URL: ${{ secrets.ANALYZE_EDGE_URL }}
+          TOKEN: ${{ secrets.ANALYZE_TRIGGER_TOKEN }}
+        run: |
+          if [ -z "$EDGE_URL" ]; then
+            echo "EDGE_URL secret is not set"
+            exit 1
+          fi
+          echo "Triggering ANALYZE via Edge Function..."
+          curl -sS -X POST "$EDGE_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-analyze-token: $TOKEN" \
+            -d '{}' \
+            --fail
+          echo "ANALYZE invoked"

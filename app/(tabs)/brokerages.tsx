@@ -4,7 +4,6 @@ import { Text, Card, Chip, Searchbar, ActivityIndicator, Button } from "react-na
 import { FlashList } from "@shopify/flash-list";
 import { useRouter } from "expo-router";
 import { getBrokerageCompanies, searchBrokerages, type BrokerageCompany } from "../../lib/services/brokerage-service";
-import { getBrokerageRatings } from "../../lib/services/rating-service";
 import { SimpleLogo } from "../../components/SimpleLogo";
 
 export default function BrokeragesScreen() {
@@ -130,7 +129,6 @@ export default function BrokeragesScreen() {
       <FlashList
         data={filteredBrokerages}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={200}
         renderItem={({ item }) => (
           <Card style={styles.brokerageCard}>
             <Card.Content>

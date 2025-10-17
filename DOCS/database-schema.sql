@@ -139,6 +139,55 @@ CREATE TABLE public.user_article_interactions (
 );
 
 -- =============================================
+-- USER BLOCKING AND MODERATION
+-- =============================================
+
+-- User blocks table for blocking other users
+CREATE TABLE public.user_blocks (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  blocker_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  blocked_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  reason VARCHAR(100), -- 'harassment', 'spam', 'inappropriate_content', 'other'
+  reason_details TEXT,
+  is_active BOOLEAN DEFAULT TRUE,
+  blocked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  unblocked_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE, -- NULL for permanent blocks
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(blocker_id, blocked_id)
+);
+
+-- Comments table for article discussions
+CREATE TABLE public.article_comments (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  article_id UUID REFERENCES public.articles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  parent_comment_id UUID REFERENCES public.article_comments(id) ON DELETE CASCADE,
+  content TEXT NOT NULL,
+  is_deleted BOOLEAN DEFAULT FALSE,
+  deleted_at TIMESTAMP WITH TIME ZONE,
+  deletion_reason VARCHAR(100),
+  like_count INTEGER DEFAULT 0,
+  reply_count INTEGER DEFAULT 0,
+  is_edited BOOLEAN DEFAULT FALSE,
+  edited_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Comment interactions (likes, reports)
+CREATE TABLE public.comment_interactions (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  comment_id UUID REFERENCES public.article_comments(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  interaction_type VARCHAR(20) NOT NULL CHECK (interaction_type IN ('like', 'report', 'flag')),
+  reason VARCHAR(100), -- For reports: 'spam', 'harassment', 'inappropriate', 'misinformation'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(comment_id, user_id, interaction_type)
+);
+
+-- =============================================
 -- AI CHAT AND ANALYSIS
 -- =============================================
 
@@ -521,6 +570,97 @@ CREATE TABLE public.storage_files (
 );
 
 -- =============================================
+-- USER BLOCKING AND COMMENTS INDEXES
+-- =============================================
+
+-- User blocks indexes
+CREATE INDEX idx_user_blocks_blocker ON public.user_blocks(blocker_id);
+CREATE INDEX idx_user_blocks_blocked ON public.user_blocks(blocked_id);
+CREATE INDEX idx_user_blocks_active ON public.user_blocks(is_active);
+CREATE INDEX idx_user_blocks_expires ON public.user_blocks(expires_at);
+CREATE INDEX idx_user_blocks_created ON public.user_blocks(created_at);
+
+-- =============================================
+-- WEB UI CONFIGURATION AND OPTIMIZATION
+-- =============================================
+
+-- Web UI preferences table
+CREATE TABLE public.web_ui_preferences (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  theme VARCHAR(20) DEFAULT 'light' CHECK (theme IN ('light', 'dark', 'auto')),
+  layout_mode VARCHAR(20) DEFAULT 'lightweight' CHECK (layout_mode IN ('standard', 'lightweight', 'minimal')),
+  data_saver BOOLEAN DEFAULT TRUE,
+  auto_refresh BOOLEAN DEFAULT FALSE,
+  refresh_interval INTEGER DEFAULT 300, -- seconds
+  max_articles_per_page INTEGER DEFAULT 10,
+  enable_images BOOLEAN DEFAULT FALSE,
+  enable_animations BOOLEAN DEFAULT FALSE,
+  compact_mode BOOLEAN DEFAULT TRUE,
+  font_size VARCHAR(10) DEFAULT 'medium' CHECK (font_size IN ('small', 'medium', 'large')),
+  color_scheme VARCHAR(20) DEFAULT 'default' CHECK (color_scheme IN ('default', 'high_contrast', 'colorblind_friendly')),
+  performance_mode VARCHAR(20) DEFAULT 'optimized' CHECK (performance_mode IN ('standard', 'optimized', 'ultra_light')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id)
+);
+
+-- Web performance metrics table
+CREATE TABLE public.web_performance_metrics (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  session_id VARCHAR(255),
+  page_load_time_ms INTEGER,
+  total_data_transferred_bytes BIGINT,
+  network_type VARCHAR(50),
+  device_type VARCHAR(50),
+  browser_info JSONB,
+  performance_score INTEGER CHECK (performance_score BETWEEN 0 AND 100),
+  optimization_level VARCHAR(20) DEFAULT 'standard',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Web cache configuration table
+CREATE TABLE public.web_cache_config (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  cache_key VARCHAR(255) UNIQUE NOT NULL,
+  cache_type VARCHAR(50) NOT NULL CHECK (cache_type IN ('articles', 'market_data', 'user_data', 'static_content')),
+  content_hash VARCHAR(255),
+  expires_at TIMESTAMP WITH TIME ZONE,
+  is_compressed BOOLEAN DEFAULT TRUE,
+  compression_type VARCHAR(20) DEFAULT 'gzip',
+  size_bytes BIGINT,
+  hit_count INTEGER DEFAULT 0,
+  last_accessed TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Article comments indexes
+CREATE INDEX idx_article_comments_article ON public.article_comments(article_id);
+CREATE INDEX idx_article_comments_user ON public.article_comments(user_id);
+CREATE INDEX idx_article_comments_parent ON public.article_comments(parent_comment_id);
+CREATE INDEX idx_article_comments_created ON public.article_comments(created_at);
+CREATE INDEX idx_article_comments_deleted ON public.article_comments(is_deleted);
+CREATE INDEX idx_article_comments_likes ON public.article_comments(like_count);
+
+-- Comment interactions indexes
+CREATE INDEX idx_comment_interactions_comment ON public.comment_interactions(comment_id);
+CREATE INDEX idx_comment_interactions_user ON public.comment_interactions(user_id);
+CREATE INDEX idx_comment_interactions_type ON public.comment_interactions(interaction_type);
+
+-- Web UI configuration indexes
+CREATE INDEX idx_web_ui_preferences_user ON public.web_ui_preferences(user_id);
+CREATE INDEX idx_web_ui_preferences_theme ON public.web_ui_preferences(theme);
+CREATE INDEX idx_web_ui_preferences_performance ON public.web_ui_preferences(performance_mode);
+CREATE INDEX idx_web_performance_metrics_user ON public.web_performance_metrics(user_id);
+CREATE INDEX idx_web_performance_metrics_session ON public.web_performance_metrics(session_id);
+CREATE INDEX idx_web_performance_metrics_created ON public.web_performance_metrics(created_at);
+CREATE INDEX idx_web_cache_config_key ON public.web_cache_config(cache_key);
+CREATE INDEX idx_web_cache_config_type ON public.web_cache_config(cache_type);
+CREATE INDEX idx_web_cache_config_expires ON public.web_cache_config(expires_at);
+
+-- =============================================
 -- STORAGE INDEXES
 -- =============================================
 
@@ -537,6 +677,89 @@ CREATE INDEX idx_storage_files_bucket ON public.storage_files(bucket_id);
 CREATE INDEX idx_storage_files_user ON public.storage_files(user_id);
 CREATE INDEX idx_storage_files_public ON public.storage_files(is_public);
 CREATE INDEX idx_storage_files_path ON public.storage_files(file_path);
+
+-- =============================================
+-- USER BLOCKING AND COMMENTS RLS POLICIES
+-- =============================================
+
+-- Enable RLS on user blocking and comments tables
+ALTER TABLE public.user_blocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.article_comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.comment_interactions ENABLE ROW LEVEL SECURITY;
+
+-- Enable RLS on web UI configuration tables
+ALTER TABLE public.web_ui_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.web_performance_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.web_cache_config ENABLE ROW LEVEL SECURITY;
+
+-- User blocks policies
+CREATE POLICY "Users can view blocks they created or received" ON public.user_blocks
+  FOR SELECT USING (
+    auth.uid() = blocker_id OR 
+    auth.uid() = blocked_id
+  );
+
+CREATE POLICY "Users can create blocks" ON public.user_blocks
+  FOR INSERT WITH CHECK (auth.uid() = blocker_id);
+
+CREATE POLICY "Users can update their own blocks" ON public.user_blocks
+  FOR UPDATE USING (auth.uid() = blocker_id);
+
+CREATE POLICY "Users can delete their own blocks" ON public.user_blocks
+  FOR DELETE USING (auth.uid() = blocker_id);
+
+-- Article comments policies
+CREATE POLICY "Users can view non-deleted comments" ON public.article_comments
+  FOR SELECT USING (is_deleted = false);
+
+CREATE POLICY "Users can create comments" ON public.article_comments
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own comments" ON public.article_comments
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own comments" ON public.article_comments
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Comment interactions policies
+CREATE POLICY "Users can view comment interactions" ON public.comment_interactions
+  FOR SELECT USING (true);
+
+CREATE POLICY "Users can create comment interactions" ON public.comment_interactions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own comment interactions" ON public.comment_interactions
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own comment interactions" ON public.comment_interactions
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Web UI preferences policies
+CREATE POLICY "Users can view their own web UI preferences" ON public.web_ui_preferences
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own web UI preferences" ON public.web_ui_preferences
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own web UI preferences" ON public.web_ui_preferences
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own web UI preferences" ON public.web_ui_preferences
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Web performance metrics policies
+CREATE POLICY "Users can view their own performance metrics" ON public.web_performance_metrics
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own performance metrics" ON public.web_performance_metrics
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Web cache config policies (public read for optimization, admin write)
+CREATE POLICY "Anyone can view cache config for optimization" ON public.web_cache_config
+  FOR SELECT USING (true);
+
+CREATE POLICY "Service role can manage cache config" ON public.web_cache_config
+  FOR ALL USING (auth.role() = 'service_role');
 
 -- =============================================
 -- STORAGE RLS POLICIES
@@ -608,6 +831,96 @@ SELECT
 FROM public.users u
 LEFT JOIN public.storage_files sf ON u.id = sf.user_id
 GROUP BY u.id, u.full_name;
+
+-- =============================================
+-- USER BLOCKING FUNCTIONS
+-- =============================================
+
+-- Function to check if user is blocked
+CREATE OR REPLACE FUNCTION is_user_blocked(blocker_uuid UUID, blocked_uuid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.user_blocks 
+    WHERE blocker_id = blocker_uuid 
+      AND blocked_id = blocked_uuid 
+      AND is_active = true 
+      AND (expires_at IS NULL OR expires_at > NOW())
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get blocked users for a user
+CREATE OR REPLACE FUNCTION get_blocked_users(user_uuid UUID)
+RETURNS TABLE (
+  blocked_user_id UUID,
+  blocked_user_name VARCHAR(255),
+  blocked_user_email VARCHAR(255),
+  reason VARCHAR(100),
+  blocked_at TIMESTAMP WITH TIME ZONE,
+  expires_at TIMESTAMP WITH TIME ZONE
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    u.id,
+    u.full_name,
+    u.email,
+    ub.reason,
+    ub.blocked_at,
+    ub.expires_at
+  FROM public.user_blocks ub
+  JOIN public.users u ON ub.blocked_id = u.id
+  WHERE ub.blocker_id = user_uuid 
+    AND ub.is_active = true
+  ORDER BY ub.blocked_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to unblock a user
+CREATE OR REPLACE FUNCTION unblock_user(blocker_uuid UUID, blocked_uuid UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  UPDATE public.user_blocks 
+  SET 
+    is_active = false,
+    unblocked_at = NOW(),
+    updated_at = NOW()
+  WHERE blocker_id = blocker_uuid 
+    AND blocked_id = blocked_uuid 
+    AND is_active = true;
+  
+  RETURN FOUND;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to filter comments based on blocks
+CREATE OR REPLACE FUNCTION filter_comments_for_user(user_uuid UUID)
+RETURNS TABLE (
+  comment_id UUID,
+  article_id UUID,
+  user_id UUID,
+  content TEXT,
+  created_at TIMESTAMP WITH TIME ZONE,
+  like_count INTEGER,
+  reply_count INTEGER
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    ac.id,
+    ac.article_id,
+    ac.user_id,
+    ac.content,
+    ac.created_at,
+    ac.like_count,
+    ac.reply_count
+  FROM public.article_comments ac
+  WHERE ac.is_deleted = false
+    AND NOT is_user_blocked(user_uuid, ac.user_id)
+  ORDER BY ac.created_at DESC;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- =============================================
 -- STORAGE TRIGGERS

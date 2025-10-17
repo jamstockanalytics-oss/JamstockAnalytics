@@ -1,9 +1,9 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView, Linking } from "react-native";
-import { Text, Card, Chip, Button, ActivityIndicator, Divider, ProgressBar } from "react-native-paper";
+import { Text, Card, Chip, Button, ActivityIndicator, ProgressBar } from "react-native-paper";
 import { getBrokerageById, type BrokerageCompany } from "../../lib/services/brokerage-service";
-import { getBrokerageRatings, getRecentRatings, type RatingStats } from "../../lib/services/rating-service";
+import { getBrokerageRatings, type RatingStats } from "../../lib/services/rating-service";
 import { SimpleLogo } from "../../components/SimpleLogo";
 
 export default function BrokerageDetailScreen() {

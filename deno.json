@@ -1,0 +1,30 @@
+{
+  "tasks": {
+    "start": "deno run --allow-net --allow-env --watch server.ts",
+    "dev": "deno run --allow-net --allow-env --watch server.ts",
+    "build": "deno compile --allow-net --allow-env --output server server.ts",
+    "test": "deno test --allow-net --allow-env",
+    "fmt": "deno fmt",
+    "lint": "deno lint"
+  },
+  "imports": {
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.36.0"
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "lib": ["deno.window"],
+    "strict": true
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "semiColons": true,
+    "singleQuote": true,
+    "proseWrap": "preserve"
+  },
+  "lint": {
+    "include": ["server.ts"],
+    "exclude": ["node_modules/", "dist/"]
+  }
+}

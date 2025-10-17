@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import { View, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
-import { Text, TextInput, Button, Chip, ActivityIndicator, Card, IconButton, Menu, Divider } from "react-native-paper";
+import { View, StyleSheet, TouchableOpacity, Alert } from "react-native";
+import { Text, TextInput, Button, Chip, IconButton, Menu, Divider } from "react-native-paper";
 import { FlashList } from "@shopify/flash-list";
 import { ChatService, type ChatMessage, type ChatSession } from "../../lib/services/chat-service";
 import { useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
+import { AIMessageShareButton } from "../../components/social";
 
 export default function ChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -16,7 +17,7 @@ export default function ChatScreen() {
   const [chatService, setChatService] = useState<ChatService | null>(null);
   const { user } = useAuth();
   const { q } = useLocalSearchParams<{ q?: string }>();
-  const flashListRef = useRef<FlashList<ChatMessage>>(null);
+  const flashListRef = useRef<any>(null);
 
   // Initialize chat service
   useEffect(() => {
@@ -209,7 +210,6 @@ export default function ChatScreen() {
         ref={flashListRef}
         data={messages}
         keyExtractor={(m) => m.id}
-        estimatedItemSize={80}
         renderItem={({ item }) => (
           <View style={[
             styles.messageContainer,
@@ -251,6 +251,21 @@ export default function ChatScreen() {
                       </TouchableOpacity>
                     ))}
                   </View>
+                </View>
+              )}
+              
+              {/* Social Sharing for AI messages */}
+              {item.type === "ai" && (
+                <View style={styles.shareContainer}>
+                  <AIMessageShareButton
+                    message={{
+                      content: item.content,
+                      timestamp: item.created_at,
+                      context: 'AI Market Analysis',
+                    }}
+                    variant="inline"
+                    onShare={(platform) => console.log(`AI message shared to ${platform}`)}
+                  />
                 </View>
               )}
             </View>
@@ -367,6 +382,12 @@ const styles = StyleSheet.create({
   },
   textInput: {
     flex: 1,
+  },
+  shareContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
 });
 

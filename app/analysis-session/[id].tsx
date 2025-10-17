@@ -1,14 +1,15 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState, useEffect } from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
-import { Text, Button, Card, Chip, ActivityIndicator, Divider, ProgressBar } from "react-native-paper";
+import { View, StyleSheet } from "react-native";
+import { Text, Button, Card, Chip, ProgressBar } from "react-native-paper";
 import { FlashList } from "@shopify/flash-list";
-import { getJSECompanies, getCompanyBySymbol, type JSECompany } from "../../lib/services/jse-service";
-import { analyzeCompany, compareCompanies, type CompanyAnalysis } from "../../lib/services/company-analysis-service";
+import { getJSECompanies, type JSECompany } from "../../lib/services/jse-service";
+import { analyzeCompany, compareCompanies } from "../../lib/services/company-analysis-service";
+import { type CompanyAnalysis } from "../../lib/services/jse-service";
 import { SimpleLogo } from "../../components/SimpleLogo";
 
 export default function AnalysisSessionScreen() {
-  const { id, companies } = useLocalSearchParams<{ id: string; companies?: string }>();
+  const { companies } = useLocalSearchParams<{ id: string; companies?: string }>();
   const router = useRouter();
   
   const [selectedCompanies, setSelectedCompanies] = useState<JSECompany[]>([]);
@@ -49,6 +50,8 @@ export default function AnalysisSessionScreen() {
       
       for (let i = 0; i < selectedCompanies.length; i++) {
         const company = selectedCompanies[i];
+        if (!company) continue;
+        
         setCurrentAnalysis(`Analyzing ${company.name}...`);
         setAnalysisProgress((i / selectedCompanies.length) * 100);
         
@@ -146,7 +149,6 @@ export default function AnalysisSessionScreen() {
       <FlashList
         data={analyses}
         keyExtractor={(item) => item.company.id}
-        estimatedItemSize={400}
         renderItem={({ item }) => (
           <Card style={styles.analysisCard}>
             <Card.Content>

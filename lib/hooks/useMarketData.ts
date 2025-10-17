@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { 
-  fetchJSEData, 
+  fetchRealJSEData, 
   getJSEMarketStatus, 
-  getMarketSummary,
+  getMarketSummary
+} from '../services/real-jse-data-service';
+import {
   type JSEStockData,
   type JSEMarketSummary,
   type JSEMarketStatus,
@@ -10,9 +12,12 @@ import {
 } from '../services/jse-data-service';
 import { 
   initializeMarketUpdates, 
-  stopMarketUpdates,
-  getMarketUpdateStatus 
-} from '../services/market-update-service';
+  stopMarketUpdates
+} from '../services/enhanced-market-update-service';
+import { 
+  startSmartUpdates, 
+  stopSmartUpdates
+} from '../services/smart-update-service';
 
 export interface UseMarketDataReturn {
   // Data
@@ -48,7 +53,7 @@ export function useMarketData(): UseMarketDataReturn {
     try {
       setLoading(true);
       const [session, summary, status] = await Promise.all([
-        fetchJSEData(),
+        fetchRealJSEData(),
         getMarketSummary(),
         getJSEMarketStatus()
       ]);
@@ -77,6 +82,8 @@ export function useMarketData(): UseMarketDataReturn {
     }
   }, [loadMarketData]);
 
+
+
   // Get stock price by symbol
   const getStockPrice = useCallback((symbol: string): JSEStockData | null => {
     return marketData.find(stock => stock.symbol === symbol) || null;
@@ -89,32 +96,37 @@ export function useMarketData(): UseMarketDataReturn {
 
     // Set up automatic updates
     const handleMarketOpen = () => {
-      console.log('Market opened - starting live updates');
-      setMarketStatus(prev => prev ? { ...prev, is_open: true } : null);
+      setMarketStatus((prev: JSEMarketStatus | null) => prev ? { ...prev, is_open: true } : null);
     };
 
     const handleMarketClose = () => {
-      console.log('Market closed - stopping live updates');
-      setMarketStatus(prev => prev ? { ...prev, is_open: false } : null);
+      setMarketStatus((prev: JSEMarketStatus | null) => prev ? { ...prev, is_open: false } : null);
     };
 
     const handleDataUpdate = (data: JSETradingSession) => {
-      console.log('Market data updated');
       setMarketData(data.stocks);
       setTradingSession(data);
       setLastUpdate(new Date().toISOString());
     };
 
-    // Initialize market updates
+    // Initialize both traditional and smart updates
     initializeMarketUpdates(
       handleMarketOpen,
       handleMarketClose,
       handleDataUpdate
     );
 
+    // Start smart updates for better performance
+    startSmartUpdates({
+      marketOpenInterval: 30000,    // 30 seconds when market is open
+      marketClosedInterval: 300000, // 5 minutes when market is closed
+      adaptiveFrequency: true
+    });
+
     // Cleanup on unmount
     return () => {
       stopMarketUpdates();
+      stopSmartUpdates();
     };
   }, [loadMarketData]);
 
@@ -154,8 +166,8 @@ export function useStockData(symbol: string) {
         setLoading(true);
         setError(null);
         
-        const session = await fetchJSEData();
-        const stock = session.stocks.find(s => s.symbol === symbol);
+        const session = await fetchRealJSEData();
+        const stock = session.stocks.find((s: JSEStockData) => s.symbol === symbol);
         
         if (stock) {
           setStockData(stock);

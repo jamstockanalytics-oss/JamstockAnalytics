@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Animated } from "react-native";
 import { Text, TextInput, Button, Divider, Checkbox, ActivityIndicator } from "react-native-paper";
 import { Link } from "expo-router";
@@ -302,7 +302,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#667eea", // Gradient background start color
+    backgroundColor: "#ffffff", // White background
   },
   scrollContent: {
     flexGrow: 1,
@@ -398,7 +398,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   forgotPassword: {
-    color: "#667eea",
+    color: "#2563eb",
     fontWeight: "500",
     textDecorationLine: "underline",
     fontSize: 14,
@@ -406,8 +406,8 @@ const styles = StyleSheet.create({
   loginButton: {
     borderRadius: 8,
     paddingVertical: 14,
-    backgroundColor: "#667eea", // Gradient start color
-    shadowColor: "#667eea",
+    backgroundColor: "#2563eb", // Blue primary color
+    shadowColor: "#2563eb",
     shadowOffset: {
       width: 0,
       height: 5,
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   signupLinkText: {
-    color: "#667eea",
+    color: "#2563eb",
     fontWeight: "500",
     textDecorationLine: "underline",
   },

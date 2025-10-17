@@ -1,12 +1,8 @@
 import { View, StyleSheet } from "react-native";
-import { Text, Button, Divider } from "react-native-paper";
-import { Link } from "expo-router";
+import { Text } from "react-native-paper";
 import { SimpleLogo } from "../../components/SimpleLogo";
-import { useAuth } from "../../contexts/AuthContext";
 
 export default function WelcomeScreen() {
-  const { continueAsGuest } = useAuth();
-
   return (
     <View style={styles.container}>
       <View style={styles.content}>
@@ -21,43 +17,10 @@ export default function WelcomeScreen() {
           and deep research tools for the Jamaica Stock Exchange.
         </Text>
         
-        <View style={styles.buttonContainer}>
-          <Button 
-            mode="contained" 
-            style={styles.guestButton}
-            contentStyle={styles.buttonContent}
-            onPress={continueAsGuest}
-            icon="account-outline"
-          >
-            Continue as Guest
-          </Button>
-          
-          <Text variant="bodySmall" style={styles.guestNote}>
-            Access basic features without signing up
-          </Text>
-          
-          <Divider style={styles.divider} />
-          
-          <Link href="/(auth)/signup" asChild>
-            <Button 
-              mode="outlined" 
-              style={styles.primaryButton}
-              contentStyle={styles.buttonContent}
-            >
-              Sign Up for Pro Features
-            </Button>
-          </Link>
-          
-          <Link href="/(auth)/login" asChild>
-            <Button 
-              mode="text" 
-              style={styles.secondaryButton}
-              contentStyle={styles.buttonContent}
-            >
-              Already have an account? Log In
-            </Button>
-          </Link>
-        </View>
+        <Text variant="bodyMedium" style={styles.note}>
+          All features are now free to access! Use the navigation tabs below to explore. 
+          Sign in through the "Login" tab for personalized experience.
+        </Text>
       </View>
       
       <View style={styles.footer}>
@@ -101,7 +64,7 @@ const styles = StyleSheet.create({
   },
   guestButton: {
     borderRadius: 8,
-    backgroundColor: '#667eea',
+    backgroundColor: '#2563eb',
   },
   guestNote: {
     textAlign: 'center',
@@ -114,7 +77,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     borderRadius: 8,
-    borderColor: '#667eea',
+    borderColor: '#2563eb',
   },
   secondaryButton: {
     marginTop: 8,
@@ -129,5 +92,12 @@ const styles = StyleSheet.create({
   footerText: {
     textAlign: 'center',
     color: '#999',
+  },
+  note: {
+    textAlign: 'center',
+    color: '#666',
+    marginTop: 24,
+    paddingHorizontal: 16,
+    fontStyle: 'italic',
   },
 });

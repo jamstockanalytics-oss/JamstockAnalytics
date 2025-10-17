@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { View, StyleSheet, ScrollView } from "react-native";
 import { Text, Button, Card, Chip, Searchbar, ActivityIndicator, Divider, RadioButton } from "react-native-paper";
-import { Link, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { FlashList } from "@shopify/flash-list";
 import { getJSECompanies, searchCompanies, type JSECompany } from "../../lib/services/jse-service";
 import { SimpleLogo } from "../../components/SimpleLogo";
@@ -241,7 +241,6 @@ export default function AnalysisScreen() {
       <FlashList
         data={filteredCompanies}
         keyExtractor={(item) => item.id}
-        estimatedItemSize={100}
         renderItem={({ item }) => (
           <Card 
             style={[

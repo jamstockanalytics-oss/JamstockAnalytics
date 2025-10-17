@@ -1,32 +1,50 @@
-// Ensure .env is loaded for local development
-try { require("dotenv").config(); } catch (_) {}
-
-// Read from process.env at build time
-module.exports = ({ config }) => {
-  return {
-    ...config,
-    name: "JamStockAnalytics",
-    slug: "jamstockanalytics",
-    version: "1.0.0",
-    orientation: "portrait",
-    icon: "./public/logo.svg",
-    splash: {
-      image: "./public/logo.svg",
-      resizeMode: "contain",
-      backgroundColor: "#000000"
+module.exports = {
+  "expo": {
+    "name": "JamStockAnalytics",
+    "slug": "jamstockanalytics",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./public/logo.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./public/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
-    web: {
-      favicon: "./public/logo.svg",
-      bundler: "metro",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
     },
-    extra: {
-      SUPABASE_URL: process.env.SUPABASE_URL || "",
-      SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || "",
-      eas: {
-        projectId: config?.extra?.eas?.projectId,
-      },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./public/logo.png",
+        "backgroundColor": "#FFFFFF"
+      }
     },
-  };
+    "web": {
+      "favicon": "./public/logo.png",
+      "bundler": "metro",
+      "output": "static",
+      "build": {
+        "babel": {
+          "include": [
+            "@babel/plugin-proposal-export-namespace-from"
+          ]
+        }
+      }
+    },
+    "plugins": [
+      "expo-router"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "545b242a-575b-4b76-b6c3-8db8cac9b1bb"
+      }
+    }
+  }
 };
-
-

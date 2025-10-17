@@ -72,7 +72,7 @@ export default function ArticleDetail() {
             {article.source}
           </Text>
           <Text variant="labelSmall" style={styles.date}>
-            {new Date(article.publication_date).toLocaleString()}
+            {new Date(article.published_at).toLocaleString()}
           </Text>
         </View>
       </View>

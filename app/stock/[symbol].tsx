@@ -9,15 +9,17 @@ import {
   type JSEStockData 
 } from "../../lib/services/jse-data-service";
 import { SimpleLogo } from "../../components/SimpleLogo";
+import { MarketChartContainer } from "../../components/charts";
 
 export default function StockDetailScreen() {
   const { symbol } = useLocalSearchParams<{ symbol: string }>();
   const router = useRouter();
   
   const [stockData, setStockData] = useState<JSEStockData | null>(null);
-  const [historicalData, setHistoricalData] = useState<{ date: string; price: number; volume: number }[]>([]);
   const [marketStatus, setMarketStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [chartData, setChartData] = useState<any>(null);
+  const [chartLoading, setChartLoading] = useState(false);
 
   useEffect(() => {
     if (symbol) {
@@ -35,12 +37,37 @@ export default function StockDetailScreen() {
       ]);
       
       setStockData(stock);
-      setHistoricalData(historical);
       setMarketStatus(status);
+      
+      // Load chart data
+      await loadChartData(historical);
     } catch (error) {
       console.error('Failed to load stock data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadChartData = async (historical: { date: string; price: number; volume: number }[]) => {
+    try {
+      setChartLoading(true);
+      
+      // Create chart data from historical data
+      const chartData = {
+        labels: historical.slice(-7).map(point => {
+          const date = new Date(point.date);
+          return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }),
+        datasets: [{
+          data: historical.slice(-7).map(point => point.price),
+          color: (opacity = 1) => `rgba(52, 152, 219, ${opacity})`,
+        }],
+      };
+      setChartData(chartData);
+    } catch (error) {
+      console.error('Failed to load chart data:', error);
+    } finally {
+      setChartLoading(false);
     }
   };
 
@@ -69,9 +96,6 @@ export default function StockDetailScreen() {
     return volume.toString();
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
-  };
 
   if (loading) {
     return (
@@ -191,42 +215,18 @@ export default function StockDetailScreen() {
         </Card.Content>
       </Card>
 
-      {/* Historical Performance */}
-      <Card style={styles.historicalCard}>
-        <Card.Content>
-          <Text variant="titleLarge" style={styles.sectionTitle}>30-Day Performance</Text>
-          {historicalData.length > 0 && (
-            <View style={styles.historicalChart}>
-              <View style={styles.chartContainer}>
-                {historicalData.slice(-7).map((point, index) => {
-                  const maxPrice = Math.max(...historicalData.map(d => d.price));
-                  const minPrice = Math.min(...historicalData.map(d => d.price));
-                  const height = ((point.price - minPrice) / (maxPrice - minPrice)) * 100;
-                  
-                  return (
-                    <View key={index} style={styles.chartBar}>
-                      <View 
-                        style={[
-                          styles.chartBarFill, 
-                          { height: `${height}%` }
-                        ]} 
-                      />
-                      <Text variant="bodySmall" style={styles.chartLabel}>
-                        {formatCurrency(point.price)}
-                      </Text>
-                    </View>
-                  );
-                })}
-              </View>
-              <View style={styles.chartLegend}>
-                <Text variant="bodySmall" style={styles.legendText}>
-                  Last 7 trading days
-                </Text>
-              </View>
-            </View>
-          )}
-        </Card.Content>
-      </Card>
+      {/* Historical Performance Chart */}
+      {chartData && (
+        <MarketChartContainer
+          data={chartData}
+          title="Price Performance"
+          subtitle="Last 7 trading days"
+          showDesignSelector={true}
+          showTypeSelector={true}
+          defaultDesign="professional"
+          loading={chartLoading}
+        />
+      )}
 
       {/* Price Movement Analysis */}
       <Card style={styles.analysisCard}>

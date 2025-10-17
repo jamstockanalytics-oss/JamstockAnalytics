@@ -798,6 +798,50 @@ export interface AnalysisSessionData {
   action_items?: string[];
 }
 
+// User blocking types
+export interface UserBlock {
+  id: string;
+  blocker_id: string;
+  blocked_id: string;
+  reason: 'harassment' | 'spam' | 'inappropriate_content' | 'misinformation' | 'other';
+  reason_details?: string;
+  is_active: boolean;
+  blocked_at: string;
+  unblocked_at?: string;
+  expires_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BlockedUser {
+  blocked_user_id: string;
+  blocked_user_name: string;
+  blocked_user_email: string;
+  reason: string;
+  blocked_at: string;
+  expires_at?: string;
+}
+
+// Comment types
+export interface Comment {
+  comment_id: string;
+  article_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+  like_count: number;
+  reply_count: number;
+}
+
+export interface CommentInteraction {
+  id: string;
+  comment_id: string;
+  user_id: string;
+  interaction_type: 'like' | 'report' | 'flag';
+  reason?: string;
+  created_at: string;
+}
+
 // Notification types
 export interface NotificationData {
   type: 'high_priority_news' | 'market_alert' | 'analysis_complete' | 'system_update';

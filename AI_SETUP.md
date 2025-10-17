@@ -18,7 +18,7 @@ Add the following to your `.env` file in the project root:
 
 ```env
 # AI Configuration
-EXPO_PUBLIC_DEEPSEEK_API_KEY=your_actual_deepseek_api_key_here
+EXPO_PUBLIC_DEEPSEEK_API_KEY=sk-8d23257f2c254d7390066067a005b564
 ```
 
 ### 3. Features Enabled with AI
