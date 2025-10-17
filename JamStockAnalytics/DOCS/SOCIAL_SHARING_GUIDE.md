@@ -288,6 +288,7 @@ CREATE TABLE user_social_preferences (
 
 ### 1. Market Screen Integration
 ```typescript
+{% raw %}
 // In app/(tabs)/market.tsx
 import { ArticleShareButton } from "../../components/social";
 
@@ -306,6 +307,7 @@ import { ArticleShareButton } from "../../components/social";
   variant="inline"
   onShare={(platform) => console.log(`Stock ${item.symbol} shared to ${platform}`)}
 />
+{% endraw %}
 ```
 
 ### 2. Chat Screen Integration

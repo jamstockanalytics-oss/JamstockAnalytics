@@ -26,11 +26,11 @@ This document summarizes the comprehensive solution implemented to address the 3
 ```yaml
 env:
   # Global environment variables with fallbacks
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL || '' }}
-  SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || '' }}
-  DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY || '' }}
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN || '' }}
-  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || '' }}
+  SUPABASE_URL: ${{ '{{' }} secrets.SUPABASE_URL || '' }}
+  SUPABASE_ANON_KEY: ${{ '{{' }} secrets.SUPABASE_ANON_KEY || '' }}
+  DEEPSEEK_API_KEY: ${{ '{{' }} secrets.DEEPSEEK_API_KEY || '' }}
+  EXPO_TOKEN: ${{ '{{' }} secrets.EXPO_TOKEN || '' }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ '{{' }} secrets.SUPABASE_SERVICE_ROLE_KEY || '' }}
 ```
 
 **Benefits:**
