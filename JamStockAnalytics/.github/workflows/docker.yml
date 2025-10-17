@@ -41,3 +41,21 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
+
+  docker-compose-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Test docker-compose
+        run: |
+          echo "🧪 Testing docker-compose configuration..."
+          docker compose config
+          echo "✅ docker-compose.yml is valid"
+
+      - name: Build with docker-compose
+        run: |
+          echo "🔨 Building with docker-compose..."
+          docker compose build
+          echo "✅ Build completed successfully"
