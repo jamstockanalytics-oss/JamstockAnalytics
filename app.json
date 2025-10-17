@@ -1,22 +1,27 @@
 {
   "expo": {
-    "scheme": "acme",
+    "name": "JamStockAnalytics",
+    "slug": "jamstockanalytics",
+    "platforms": ["web"],
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
     "plugins": [
       "expo-router"
     ],
-    "name": "JamStockAnalytics",
-    "slug": "jamstockanalytics",
+    "scheme": "jamstockanalytics",
     "extra": {
       "SUPABASE_URL": "",
       "SUPABASE_ANON_KEY": "",
       "eas": {
         "projectId": "2241d06b-c07b-4ce2-8337-bc20021d2feb"
       },
-      "router": {}
+      "router": {
+        "origin": false
+      }
     },
-    "owner": "junior876",
-    "android": {
-      "package": "com.junior876.jamstockanalytics"
-    }
+    "owner": "junior876"
   }
 }
