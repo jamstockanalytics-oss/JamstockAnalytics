@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "545b242a-575b-4b76-b6c3-8db8cac9b1bb"
+      }
+    },
+    "android": {
+      "package": "com.junior876.jamstockanalytics"
+    }
+  }
+}
