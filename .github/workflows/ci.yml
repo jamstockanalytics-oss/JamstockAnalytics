@@ -20,7 +20,10 @@ jobs:
         cache: 'npm'
     
     - name: Install dependencies
-      run: npm ci
+      run: |
+        echo "🔧 Installing dependencies..."
+        npm ci --prefer-offline --no-audit
+        echo "✅ Dependencies installed successfully"
     
     - name: Check required secrets
       run: |

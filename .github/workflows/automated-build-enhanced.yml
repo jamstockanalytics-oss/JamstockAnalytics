@@ -72,8 +72,18 @@ jobs:
         node-version: '18'
         cache: 'npm'
     
+    - name: Verify Node.js installation
+      run: |
+        echo "🔍 Verifying Node.js installation..."
+        node --version
+        npm --version
+        echo "✅ Node.js setup verified"
+    
     - name: Install dependencies
-      run: npm ci
+      run: |
+        echo "🔧 Installing dependencies..."
+        npm ci --prefer-offline --no-audit
+        echo "✅ Dependencies installed successfully"
     
     - name: Validate secrets and environment
       id: validate-secrets
