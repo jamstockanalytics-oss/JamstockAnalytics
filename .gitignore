@@ -29,8 +29,20 @@ yarn-error.*
 .DS_Store
 *.pem
 
-# local env files
-.env*.local
+# Environment variables (SECURITY - Contains API keys)
+.env
+.env.*
+.env.backup
+.env.template
+env.example
+*.env
+
+# Security-sensitive documentation files
+*JWT_COMMANDS.md
+*AUTH_SETUP.md
+*SECRET*.md
+*KEY*.md
+*CREDENTIAL*.md
 
 # Google Service Account (sensitive)
 google-service-account.json
