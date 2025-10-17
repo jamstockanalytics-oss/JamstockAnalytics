@@ -150,6 +150,7 @@ jobs:
         npm install -g eas-cli@latest
     
     - name: Build Android
+      if: ${{ secrets.EXPO_TOKEN }}
       run: |
         echo "🚀 Starting Android build..."
         eas build --platform android --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
@@ -159,6 +160,12 @@ jobs:
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         EXPO_PUBLIC_DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    - name: Skip Android build (no EXPO_TOKEN)
+      if: ${{ !secrets.EXPO_TOKEN }}
+      run: |
+        echo "⚠️  EXPO_TOKEN not configured - skipping Android build"
+        echo "💡 Add EXPO_TOKEN to GitHub secrets to enable EAS builds"
 
   build-ios:
     runs-on: macos-latest
@@ -182,6 +189,7 @@ jobs:
         npm install -g eas-cli@latest
     
     - name: Build iOS
+      if: ${{ secrets.EXPO_TOKEN }}
       run: |
         echo "🚀 Starting iOS build..."
         eas build --platform ios --profile ${{ github.event.inputs.build_profile || 'automated' }} --non-interactive
@@ -191,6 +199,12 @@ jobs:
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         EXPO_PUBLIC_DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    - name: Skip iOS build (no EXPO_TOKEN)
+      if: ${{ !secrets.EXPO_TOKEN }}
+      run: |
+        echo "⚠️  EXPO_TOKEN not configured - skipping iOS build"
+        echo "💡 Add EXPO_TOKEN to GitHub secrets to enable EAS builds"
 
   build-web:
     runs-on: ubuntu-latest
@@ -243,12 +257,20 @@ jobs:
         npm install -g eas-cli@latest
     
     - name: Deploy to Expo
+      if: ${{ secrets.EXPO_TOKEN }}
       run: npm run deploy:auto
       env:
         EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         EXPO_PUBLIC_DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+    
+    - name: Skip Expo deployment (no EXPO_TOKEN)
+      if: ${{ !secrets.EXPO_TOKEN }}
+      run: |
+        echo "⚠️  EXPO_TOKEN not configured - skipping Expo deployment"
+        echo "💡 Add EXPO_TOKEN to GitHub secrets to enable Expo deployment"
+        echo "✅ Web build artifacts are still available for manual deployment"
 
   notify:
     runs-on: ubuntu-latest
