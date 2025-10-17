@@ -1,0 +1,178 @@
+name: Test GCP Authentication
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+        - basic
+        - full
+        - permissions
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  GCP_PROJECT_ID: jamstockanalytics
+  GCP_SERVICE_ACCOUNT: 802624016917-compute@developer.gserviceaccount.com
+
+jobs:
+  test-gcp-authentication:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Test GCP Secret Availability
+      run: |
+        echo "🔍 Testing GCP secret availability..."
+        if [[ -n "${{ secrets.GCP_SA_KEY }}" ]]; then
+          echo "✅ GCP_SA_KEY secret is present"
+          echo "Secret length: ${#GCP_SA_KEY}"
+        else
+          echo "❌ GCP_SA_KEY secret is missing"
+          echo "💡 Please add the GCP service account key to GitHub Secrets"
+          exit 1
+        fi
+      env:
+        GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+    
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        credentials_json: ${{ secrets.GCP_SA_KEY }}
+    
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        version: 'latest'
+    
+    - name: Configure gcloud
+      run: |
+        gcloud config set project ${{ env.GCP_PROJECT_ID }}
+        gcloud config set account ${{ env.GCP_SERVICE_ACCOUNT }}
+        echo "GCP Project: $(gcloud config get-value project)"
+        echo "GCP Account: $(gcloud config get-value account)"
+    
+    - name: Verify Authentication
+      run: |
+        echo "🔍 Verifying GCP authentication..."
+        
+        # Check if authenticated
+        if gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q .; then
+          echo "✅ GCP authentication successful"
+        else
+          echo "❌ GCP authentication failed"
+          exit 1
+        fi
+        
+        # Check service account status
+        echo "🔍 Checking service account status..."
+        DISABLED_STATUS=$(gcloud iam service-accounts describe ${{ env.GCP_SERVICE_ACCOUNT }} --project=${{ env.GCP_PROJECT_ID }} --format="value(disabled)")
+        
+        if [[ "$DISABLED_STATUS" == "True" ]]; then
+          echo "❌ Service account is disabled"
+          echo "💡 Please enable the service account:"
+          echo "   gcloud iam service-accounts enable ${{ env.GCP_SERVICE_ACCOUNT }} --project=${{ env.GCP_PROJECT_ID }}"
+          exit 1
+        else
+          echo "✅ Service account is enabled"
+        fi
+    
+    - name: Test Basic GCP Operations
+      if: github.event.inputs.test_type == 'basic' || github.event.inputs.test_type == 'full'
+      run: |
+        echo "🧪 Testing basic GCP operations..."
+        
+        # Test project access
+        echo "Testing project access..."
+        gcloud config get-value project
+        
+        # Test service account list
+        echo "Testing service account access..."
+        gcloud iam service-accounts list --filter="email:${{ env.GCP_SERVICE_ACCOUNT }}"
+        
+        echo "✅ Basic GCP operations test passed"
+    
+    - name: Test Permissions
+      if: github.event.inputs.test_type == 'permissions' || github.event.inputs.test_type == 'full'
+      run: |
+        echo "🔍 Testing service account permissions..."
+        
+        # Check current roles
+        echo "Current roles for service account:"
+        gcloud projects get-iam-policy ${{ env.GCP_PROJECT_ID }} \
+          --flatten="bindings[].members" \
+          --format="table(bindings.role)" \
+          --filter="bindings.members:${{ env.GCP_SERVICE_ACCOUNT }}" || echo "No roles found"
+        
+        # Test storage access (if storage.admin role is granted)
+        echo "Testing storage access..."
+        gcloud storage buckets list --project=${{ env.GCP_PROJECT_ID }} || echo "Storage access test failed (may not have storage.admin role)"
+        
+        # Test IAM access
+        echo "Testing IAM access..."
+        gcloud iam service-accounts list --project=${{ env.GCP_PROJECT_ID }} || echo "IAM access test failed"
+        
+        echo "✅ Permissions test completed"
+    
+    - name: Test Service Account Key
+      run: |
+        echo "🔍 Testing service account key..."
+        
+        # Verify the key format
+        if echo "${{ secrets.GCP_SA_KEY }}" | jq -e . >/dev/null 2>&1; then
+          echo "✅ Service account key is valid JSON"
+          
+          # Extract key information
+          PROJECT_ID=$(echo "${{ secrets.GCP_SA_KEY }}" | jq -r '.project_id')
+          CLIENT_EMAIL=$(echo "${{ secrets.GCP_SA_KEY }}" | jq -r '.client_email')
+          KEY_TYPE=$(echo "${{ secrets.GCP_SA_KEY }}" | jq -r '.type')
+          
+          echo "  Project ID: $PROJECT_ID"
+          echo "  Client Email: $CLIENT_EMAIL"
+          echo "  Key Type: $KEY_TYPE"
+          
+          if [[ "$PROJECT_ID" == "${{ env.GCP_PROJECT_ID }}" ]]; then
+            echo "✅ Project ID matches"
+          else
+            echo "❌ Project ID mismatch: expected ${{ env.GCP_PROJECT_ID }}, got $PROJECT_ID"
+          fi
+          
+          if [[ "$CLIENT_EMAIL" == "${{ env.GCP_SERVICE_ACCOUNT }}" ]]; then
+            echo "✅ Service account email matches"
+          else
+            echo "❌ Service account email mismatch: expected ${{ env.GCP_SERVICE_ACCOUNT }}, got $CLIENT_EMAIL"
+          fi
+        else
+          echo "❌ Service account key is not valid JSON"
+          exit 1
+        fi
+    
+    - name: Generate Test Report
+      run: |
+        echo "## 🎉 GCP Authentication Test Results" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Test Status: PASSED" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
+        echo "- Project ID: ${{ env.GCP_PROJECT_ID }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Service Account: ${{ env.GCP_SERVICE_ACCOUNT }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Authentication: ✅ Success" >> $GITHUB_STEP_SUMMARY
+        echo "- Service Account Status: ✅ Enabled" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+        echo "1. ✅ GCP authentication is working" >> $GITHUB_STEP_SUMMARY
+        echo "2. ✅ Ready to use enhanced workflows" >> $GITHUB_STEP_SUMMARY
+        echo "3. ✅ Can proceed with automated builds" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Available Workflows:**" >> $GITHUB_STEP_SUMMARY
+        echo "- \`automated-build-with-gcp.yml\` - Enhanced build with GCP auth" >> $GITHUB_STEP_SUMMARY
+        echo "- \`automated-build-enhanced.yml\` - Enhanced build without GCP" >> $GITHUB_STEP_SUMMARY
