@@ -1,0 +1,82 @@
+name: 🔍 Verify EXPO_TOKEN Configuration
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_mode:
+        description: 'Test mode for verification'
+        required: false
+        default: 'true'
+
+jobs:
+  verify-expo-token:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Verify EXPO_TOKEN Secret
+        run: |
+          echo "🔍 Checking EXPO_TOKEN configuration..."
+          
+          if [[ -z "${{ secrets.EXPO_TOKEN }}" ]]; then
+            echo "❌ EXPO_TOKEN is NOT set"
+            echo "💡 Please add EXPO_TOKEN to your repository secrets:"
+            echo "   1. Go to Settings → Secrets and variables → Actions"
+            echo "   2. Click 'New repository secret'"
+            echo "   3. Name: EXPO_TOKEN"
+            echo "   4. Value: Your Expo token from https://expo.dev/settings/tokens"
+            echo ""
+            echo "🔧 Without EXPO_TOKEN:"
+            echo "   ✅ Web builds will work"
+            echo "   ❌ Android builds will fail"
+            echo "   ❌ iOS builds will fail"
+            exit 1
+          else
+            echo "✅ EXPO_TOKEN is configured!"
+            echo "🔧 Token length: ${#EXPO_TOKEN}"
+            echo "🎉 All builds (Android, iOS, Web) should work!"
+          fi
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Test Expo CLI
+        run: |
+          echo "🔍 Testing Expo CLI availability..."
+          if command -v expo &> /dev/null; then
+            echo "✅ Expo CLI is available"
+          else
+            echo "📦 Installing Expo CLI..."
+            npm install -g @expo/cli
+            echo "✅ Expo CLI installed"
+          fi
+          
+          echo "🔍 Testing Expo authentication..."
+          if expo whoami &> /dev/null; then
+            echo "✅ Expo authentication working"
+          else
+            echo "⚠️  Expo authentication may need setup"
+            echo "💡 Run 'expo login' locally to test"
+          fi
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "🎯 EXPO_TOKEN Verification Summary:"
+          echo "=================================="
+          if [[ -n "${{ secrets.EXPO_TOKEN }}" ]]; then
+            echo "✅ EXPO_TOKEN: Configured"
+            echo "✅ Android Builds: Ready"
+            echo "✅ iOS Builds: Ready" 
+            echo "✅ Web Builds: Ready"
+            echo ""
+            echo "🚀 All platforms ready for deployment!"
+          else
+            echo "❌ EXPO_TOKEN: Missing"
+            echo "⚠️  Android Builds: Will fail"
+            echo "⚠️  iOS Builds: Will fail"
+            echo "✅ Web Builds: Will work"
+            echo ""
+            echo "🔧 Add EXPO_TOKEN to enable mobile builds"
+          fi
+

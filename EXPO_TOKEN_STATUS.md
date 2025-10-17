@@ -79,3 +79,4 @@
 ---
 
 **🎉 Your JamStockAnalytics is ready for deployment!**
+
