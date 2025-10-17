@@ -200,8 +200,8 @@ git push
 ### Verification Commands:
 ```bash
 # Check if secrets are configured (run in GitHub Actions)
-echo "EXPO_TOKEN configured: ${{ secrets.EXPO_TOKEN != '' }}"
-echo "DOCKER_USERNAME configured: ${{ secrets.DOCKER_USERNAME != '' }}"
+echo "EXPO_TOKEN configured: ${{ '{{' }} secrets.EXPO_TOKEN != '' }}"
+echo "DOCKER_USERNAME configured: ${{ '{{' }} secrets.DOCKER_USERNAME != '' }}"
 ```
 
 ### Contact:
