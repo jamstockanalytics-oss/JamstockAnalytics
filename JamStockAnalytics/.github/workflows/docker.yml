@@ -1,0 +1,43 @@
+name: Docker Build and Security Scan
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'JamStockAnalytics/**'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'Dockerfile'
+      - 'docker-compose.yml'
+      - 'JamStockAnalytics/**'
+  workflow_dispatch:
+
+jobs:
+  docker-build-and-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          docker build -t jamstockanalytics:latest .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'jamstockanalytics:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
