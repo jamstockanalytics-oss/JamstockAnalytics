@@ -1,4 +1,4 @@
-const SentryWebpackPlugin = require('@sentry/webpack-plugin');
+const { sentryWebpackPlugin } = require('@sentry/webpack-plugin');
 const path = require('path');
 const CompressionPlugin = require('compression-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -12,10 +12,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'server.js',
-    clean: true,
-    // Performance optimizations
-    chunkFilename: '[name].[contenthash].js',
-    assetModuleFilename: 'assets/[name].[contenthash][ext]'
+    clean: true
   },
   
   // Performance optimizations
@@ -31,33 +28,16 @@ module.exports = {
           },
           mangle: {
             reserved: ['require', 'exports', 'module']
-          },
-          extractComments: false
-        })
-      ]
-    },
-    splitChunks: {
-      chunks: 'all',
-      cacheGroups: {
-        vendor: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-          priority: 10
+          }
         },
-        common: {
-          name: 'common',
-          minChunks: 2,
-          chunks: 'all',
-          priority: 5
-        }
-      }
-    }
+        extractComments: false
+      })
+    ]
   },
   
   plugins: [
     // Sentry plugin
-    new SentryWebpackPlugin({
+    sentryWebpackPlugin({
       org: 'jam-stock-analytics',
       project: 'node-b0',
       authToken: process.env.SENTRY_AUTH_TOKEN,
