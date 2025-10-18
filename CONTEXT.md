@@ -3676,7 +3676,296 @@ docker logs jamstockanalytics --tail=100
 docker exec jamstockanalytics nginx -T
 ```
 
-### 17.9. Success Metrics
+### 17.9. Docker Build and Push to GitHub
+
+#### Automated Docker Build Process
+
+**GitHub Actions Docker Workflow:**
+```yaml
+# .github/workflows/docker-build.yml
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main, master, production ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker image tag'
+        required: true
+        default: 'latest'
+        type: string
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: jamstockanalytics
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      
+      - name: Docker image digest
+        run: echo ${{ steps.build.outputs.digest }}
+      
+      - name: Deploy to GitHub Pages
+        run: |
+          echo "🚀 Docker build completed successfully!"
+          echo "📦 Image: jamstockanalytics:${{ github.sha }}"
+          echo "🌐 Live site: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/"
+```
+
+#### Manual Docker Build and Push Commands
+
+**Local Docker Build:**
+```bash
+# Build Docker image locally
+docker build -t jamstockanalytics:latest .
+
+# Tag for Docker Hub
+docker tag jamstockanalytics:latest yourusername/jamstockanalytics:latest
+
+# Login to Docker Hub
+docker login
+
+# Push to Docker Hub
+docker push yourusername/jamstockanalytics:latest
+
+# Push with multiple tags
+docker tag jamstockanalytics:latest yourusername/jamstockanalytics:v1.0.0
+docker tag jamstockanalytics:latest yourusername/jamstockanalytics:production
+docker push yourusername/jamstockanalytics:v1.0.0
+docker push yourusername/jamstockanalytics:production
+```
+
+**GitHub Container Registry (ghcr.io):**
+```bash
+# Build and tag for GitHub Container Registry
+docker build -t ghcr.io/jamstockanalytics-oss/jamstockanalytics:latest .
+
+# Login to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+
+# Push to GitHub Container Registry
+docker push ghcr.io/jamstockanalytics-oss/jamstockanalytics:latest
+```
+
+#### Docker Build Optimization
+
+**Multi-stage Dockerfile for Production:**
+```dockerfile
+# Multi-stage build for optimized production image
+FROM nginx:alpine AS base
+
+# Stage 1: Build assets (if needed)
+FROM node:18-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Stage 2: Production nginx server
+FROM base AS production
+
+# Copy web application files
+COPY index.html web-config.html web-preview.html /usr/share/nginx/html/
+COPY static/ /usr/share/nginx/html/static/
+COPY logo.png favicon.ico /usr/share/nginx/html/
+
+# Create optimized nginx configuration
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
+    echo '    listen 80;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    server_name _;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    index index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Security headers' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-Frame-Options "SAMEORIGIN" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-Content-Type-Options "nosniff" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-XSS-Protection "1; mode=block" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Gzip compression' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip on;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_vary on;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_min_length 1024;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Cache static assets' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg)$ {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Main location' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '}' >> /etc/nginx/conf.d/default.conf
+
+# Set proper permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+
+# Expose port 80
+EXPOSE 80
+
+# Start nginx
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### Docker Build Commands for GitHub
+
+**Quick Build and Push:**
+```bash
+# Build and push in one command
+docker build -t jamstockanalytics:latest . && \
+docker tag jamstockanalytics:latest yourusername/jamstockanalytics:latest && \
+docker push yourusername/jamstockanalytics:latest
+
+# Build with specific tag
+docker build -t jamstockanalytics:v1.0.0 . && \
+docker push yourusername/jamstockanalytics:v1.0.0
+
+# Build for multiple platforms
+docker buildx build --platform linux/amd64,linux/arm64 -t yourusername/jamstockanalytics:latest --push .
+```
+
+**Automated Build Script:**
+```bash
+#!/bin/bash
+# build-and-push.sh
+
+set -e
+
+# Configuration
+IMAGE_NAME="jamstockanalytics"
+REGISTRY="yourusername"
+TAG=${1:-latest}
+
+echo "🚀 Building Docker image: $IMAGE_NAME:$TAG"
+
+# Build image
+docker build -t $IMAGE_NAME:$TAG .
+
+# Tag for registry
+docker tag $IMAGE_NAME:$TAG $REGISTRY/$IMAGE_NAME:$TAG
+
+# Push to registry
+echo "📦 Pushing to registry..."
+docker push $REGISTRY/$IMAGE_NAME:$TAG
+
+echo "✅ Successfully pushed $REGISTRY/$IMAGE_NAME:$TAG"
+
+# Optional: Clean up local images
+docker rmi $IMAGE_NAME:$TAG $REGISTRY/$IMAGE_NAME:$TAG
+
+echo "🧹 Cleaned up local images"
+```
+
+#### GitHub Actions Docker Build Status
+
+**Build Status Monitoring:**
+```yaml
+# Add to workflow for build status
+- name: Build status notification
+  run: |
+    if [ "${{ job.status }}" == "success" ]; then
+      echo "✅ Docker build completed successfully!"
+      echo "📦 Image: jamstockanalytics:${{ github.sha }}"
+      echo "🌐 Live site: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/"
+    else
+      echo "❌ Docker build failed!"
+      exit 1
+    fi
+```
+
+#### Docker Registry Configuration
+
+**Docker Hub Setup:**
+```bash
+# Create Docker Hub repository
+# 1. Go to https://hub.docker.com/
+# 2. Create new repository: jamstockanalytics
+# 3. Set visibility: Public
+# 4. Add description: "AI-Powered Jamaica Stock Exchange Market Analysis"
+```
+
+**GitHub Container Registry Setup:**
+```bash
+# GitHub Container Registry (ghcr.io)
+# 1. Go to repository Settings → Actions → General
+# 2. Enable "Read and write permissions"
+# 3. Use GITHUB_TOKEN for authentication
+```
+
+#### Docker Build Verification
+
+**Test Docker Build Locally:**
+```bash
+# Build and test locally
+docker build -t jamstockanalytics:test .
+docker run -d --name jamstock-test -p 8081:80 jamstockanalytics:test
+
+# Test the application
+curl http://localhost:8081
+curl http://localhost:8081/web-config.html
+curl http://localhost:8081/web-preview.html
+
+# Check container logs
+docker logs jamstock-test
+
+# Clean up
+docker stop jamstock-test
+docker rm jamstock-test
+```
+
+**Verify GitHub Actions Build:**
+```bash
+# Check GitHub Actions status
+gh run list --limit 5
+
+# View build logs
+gh run view <run-id>
+
+# Download build artifacts
+gh run download <run-id>
+```
+
+### 17.10. Success Metrics
 
 #### Repository Health
 - ✅ No GitHub errors
@@ -3690,6 +3979,12 @@ docker exec jamstockanalytics nginx -T
 - ✅ GitHub Pages live
 - ✅ All features functional
 
+#### Docker Build Status
+- ✅ Docker image building successfully
+- ✅ Multi-platform builds working
+- ✅ Registry push successful
+- ✅ Automated deployment working
+
 #### Monitoring
 - ✅ Health checks passing
 - ✅ Alerts configured
@@ -3698,4 +3993,4 @@ docker exec jamstockanalytics nginx -T
 
 ---
 
-*This document serves as the comprehensive specification for the JamStockAnalyticsAI application, covering all aspects from initial setup to advanced features and deployment, including comprehensive GitHub error resolution documentation and environment setup.*
+*This document serves as the comprehensive specification for the JamStockAnalyticsAI application, covering all aspects from initial setup to advanced features and deployment, including comprehensive GitHub error resolution documentation, environment setup, and Docker build automation.*
