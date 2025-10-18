@@ -428,10 +428,17 @@ async function startServer() {
     console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`📦 Version: ${process.env.npm_package_version || '1.0.0'}`);
     console.log(`🗄️ Database: ${process.env.MONGODB_URI ? 'Connected' : 'Not configured'}`);
+    console.log(`⏱️ Keep-Alive Timeout: ${server.keepAliveTimeout}ms`);
+    console.log(`⏱️ Headers Timeout: ${server.headersTimeout}ms`);
   }).on('error', (err) => {
     console.error('❌ Failed to start webhook handler:', err);
     process.exit(1);
   });
+  
+  // Configure server timeouts for Render.com and prevent connection drops
+  server.keepAliveTimeout = 120000; // 120 seconds
+  server.headersTimeout = 121000;   // 121 seconds (must be > keepAliveTimeout)
+  server.requestTimeout = 120000;   // 120 seconds for request timeout
 }
 
 // Start the server
