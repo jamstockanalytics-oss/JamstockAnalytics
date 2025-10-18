@@ -1,20 +1,18 @@
-# Use Node.js 18 Alpine as base image
-FROM node:18-alpine
+# Use a simple nginx server to serve static files
+FROM nginx:alpine
 
-# Set working directory
-WORKDIR /app
+# Copy the web application files
+COPY index.html /usr/share/nginx/html/
+COPY web-config.html /usr/share/nginx/html/
+COPY web-preview.html /usr/share/nginx/html/
+COPY static/ /usr/share/nginx/html/static/
+COPY logo.png /usr/share/nginx/html/
+COPY favicon.ico /usr/share/nginx/html/
 
-# Copy package files
-COPY package*.json ./
+# Copy any other HTML files
+COPY *.html /usr/share/nginx/html/
 
-# Install dependencies
-RUN npm ci
+# Expose port 80
+EXPOSE 80
 
-# Copy the application files
-COPY . .
-
-# Expose the port
-EXPOSE 8081
-
-# Start a simple HTTP server for the web application
-CMD ["npx", "serve", "-s", ".", "-l", "8081"]
+# Nginx will start automatically
