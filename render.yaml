@@ -6,7 +6,7 @@ services:
     buildCommand: echo "Dependencies will be installed automatically by Render"
     startCommand: node webhook-handler.js
     envVars:
-      - key: WEBHOOK_PORT
+      - key: PORT
         value: 3000
       - key: WEBHOOK_SECRET
         value: your-webhook-secret

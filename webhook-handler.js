@@ -8,7 +8,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.WEBHOOK_PORT || 3000;
+const PORT = process.env.PORT || process.env.WEBHOOK_PORT || 3000;
 
 // Security middleware
 app.use(helmet());
@@ -398,9 +398,14 @@ app.use((req, res) => {
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Webhook handler running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
+  console.log(`✅ Webhook handler running on port ${PORT}`);
+  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+  console.log(`🎯 Webhook endpoint: http://localhost:${PORT}/webhook`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`📦 Version: ${process.env.npm_package_version || '1.0.0'}`);
+}).on('error', (err) => {
+  console.error('❌ Failed to start webhook handler:', err);
+  process.exit(1);
 });
 
 // Graceful shutdown
