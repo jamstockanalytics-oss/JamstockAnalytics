@@ -140,10 +140,16 @@ const server = http.createServer((req, res) => {
 });
 
 // Start server
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   log(`Webhook handler listening on port ${PORT}`);
   log(`Health check: http://localhost:${PORT}/health`);
   log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
+});
+
+// Handle server errors
+server.on('error', (error) => {
+  log(`Server error: ${error.message}`, 'ERROR');
+  process.exit(1);
 });
 
 // Graceful shutdown
