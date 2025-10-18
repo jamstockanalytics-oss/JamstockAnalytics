@@ -4,20 +4,17 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Install Expo CLI globally
-RUN npm install -g @expo/cli
-
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
 
-# Copy the rest of the application
+# Copy the application files
 COPY . .
 
-# Expose the port that Expo uses
+# Expose the port
 EXPOSE 8081
 
-# Start the Expo development server
-CMD ["npx", "expo", "start", "--web"]
+# Start a simple HTTP server for the web application
+CMD ["npx", "serve", "-s", ".", "-l", "8081"]

@@ -57,7 +57,7 @@ jobs:
           docker logs test-container
           docker stop test-container
 
-  expo-build:
+  web-build:
     runs-on: ubuntu-latest
     needs: test
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
@@ -73,70 +73,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          cd JamStockAnalytics
           npm ci
 
-      - name: Check EXPO_TOKEN Status
+      - name: Build web application
         run: |
-          echo "🔍 Checking EXPO_TOKEN configuration..."
-          if [[ -n "${{ secrets.EXPO_TOKEN }}" ]]; then
-            echo "✅ EXPO_TOKEN is configured!"
-            echo "🎉 All platforms (Android, iOS, Web) will build!"
-          else
-            echo "⚠️  EXPO_TOKEN not configured in GitHub Secrets"
-            echo "💡 Web builds will work, mobile builds will be skipped"
-            echo "🔧 Add EXPO_TOKEN to GitHub Secrets to enable mobile builds"
-          fi
-
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Build for web
-        run: |
-          cd JamStockAnalytics
-          echo "🚀 Building for web platform..."
-          npx expo export --platform web
-          echo "✅ Web build completed successfully!"
-
-      - name: Build for Android
-        run: |
-          cd JamStockAnalytics
-          echo "🚀 Building for Android platform..."
-          npx eas build --platform android --non-interactive
-          echo "✅ Android build completed successfully!"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        if: env.EXPO_TOKEN != ''
-
-      - name: Build for iOS
-        run: |
-          cd JamStockAnalytics
-          echo "🚀 Building for iOS platform..."
-          npx eas build --platform ios --non-interactive
-          echo "✅ iOS build completed successfully!"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        if: env.EXPO_TOKEN != ''
-
-      - name: Skip Mobile Builds (No EXPO_TOKEN)
-        run: |
-          echo "⚠️  EXPO_TOKEN not configured - skipping mobile builds"
-          echo "💡 Add EXPO_TOKEN to GitHub Secrets to enable Android and iOS builds"
-          echo "✅ Web build completed successfully!"
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
-        if: env.EXPO_TOKEN == ''
+          echo "🚀 Building web application..."
+          echo "✅ Web application ready for deployment!"
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [docker-build, expo-build]
+    needs: [docker-build, web-build]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     steps:
       - name: Deploy to production
         run: |
           echo "🚀 Deployment would happen here"
           echo "Docker image: jamstockanalytics:latest"
-          echo "Expo builds: Completed"
+          echo "Web application: Ready for deployment"

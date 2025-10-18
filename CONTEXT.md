@@ -715,7 +715,7 @@ aws s3 sync dist/ s3://your-bucket --delete
 # Build Docker image
 docker build -t jamstockanalytics .
 
-# Run container
+# Run container (serves web application on port 8081)
 docker run -p 8081:8081 jamstockanalytics
 
 # Using docker-compose
