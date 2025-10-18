@@ -1,4 +1,18 @@
 services:
+  # MongoDB Database Service
+  - type: pserv
+    name: jamstockanalytics-db
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.mongodb
+    envVars:
+      - key: MONGO_INITDB_ROOT_USERNAME
+        value: admin
+      - key: MONGO_INITDB_ROOT_PASSWORD
+        generateValue: true
+      - key: MONGO_INITDB_DATABASE
+        value: jamstockanalytics
+
   # Main Production Application
   - type: web
     name: jamstockanalytics-production
@@ -12,6 +26,10 @@ services:
         value: production
       - key: PORT
         value: 3000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: jamstockanalytics-db
+          property: connectionString
       - key: JWT_SECRET
         generateValue: true
       - key: CLIENT_URL
@@ -41,6 +59,10 @@ services:
     envVars:
       - key: PORT
         value: 3000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: jamstockanalytics-db
+          property: connectionString
       - key: WEBHOOK_SECRET
         value: your-webhook-secret
       - key: NODE_ENV

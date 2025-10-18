@@ -5,6 +5,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
@@ -396,31 +397,56 @@ app.use((req, res) => {
   });
 });
 
-// Start server
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Webhook handler running on port ${PORT}`);
-  console.log(`🌍 Host: 0.0.0.0`);
-  console.log(`🔗 Health check: http://localhost:${PORT}/health`);
-  console.log(`🎯 Webhook endpoint: http://localhost:${PORT}/webhook`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📦 Version: ${process.env.npm_package_version || '1.0.0'}`);
-}).on('error', (err) => {
-  console.error('❌ Failed to start webhook handler:', err);
-  process.exit(1);
-});
+// Initialize database connection
+async function initializeDatabase() {
+  try {
+    if (process.env.MONGODB_URI) {
+      console.log('📊 Connecting to MongoDB database...');
+      await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log('✅ Database connected successfully for webhook service');
+    } else {
+      console.log('⚠️ No MONGODB_URI found, webhook service running without database');
+    }
+  } catch (error) {
+    console.warn('⚠️ Database connection failed for webhook service:', error.message);
+    console.log('💡 Webhook service will continue without database storage');
+  }
+}
 
-// Configure server timeouts for Render.com
-server.keepAliveTimeout = 120000; // 2 minutes
-server.headersTimeout = 120000;   // 2 minutes
+// Start server
+async function startServer() {
+  await initializeDatabase();
+  
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ Webhook handler running on port ${PORT}`);
+    console.log(`🌍 Host: 0.0.0.0`);
+    console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+    console.log(`🎯 Webhook endpoint: http://localhost:${PORT}/webhook`);
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📦 Version: ${process.env.npm_package_version || '1.0.0'}`);
+    console.log(`🗄️ Database: ${process.env.MONGODB_URI ? 'Connected' : 'Not configured'}`);
+  }).on('error', (err) => {
+    console.error('❌ Failed to start webhook handler:', err);
+    process.exit(1);
+  });
+}
+
+// Start the server
+startServer().catch(console.error);
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down webhook handler');
+  mongoose.connection.close();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down webhook handler');
+  mongoose.connection.close();
   process.exit(0);
 });
 

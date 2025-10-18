@@ -325,80 +325,53 @@ async function initializeServices() {
   try {
     console.log('🔄 Initializing services...');
     
-    // Try to connect to database, but don't fail if not available
-    try {
-      await DatabaseService.connect();
-      console.log('✅ Database connected successfully');
-    } catch (dbError) {
-      console.warn('⚠️ Database connection failed, continuing without database:', dbError.message);
-      console.log('💡 You can add a database later by configuring MONGODB_URI');
-    }
+    // Connect to database first - this is required for all services
+    console.log('📊 Connecting to MongoDB database...');
+    await DatabaseService.connect();
+    console.log('✅ Database connected successfully');
+    console.log(`🗄️ Database: ${process.env.MONGODB_URI ? 'Connected' : 'Not configured'}`);
     
-    // Initialize services (these should work without database)
-    try {
-      await MarketDataService.initialize();
-      console.log('✅ Market Data Service initialized');
-    } catch (error) {
-      console.warn('⚠️ Market Data Service initialization failed:', error.message);
-    }
+    // Initialize all services with database connection
+    console.log('🚀 Initializing all services...');
     
-    try {
-      await AIService.initialize();
-      console.log('✅ AI Service initialized');
-    } catch (error) {
-      console.warn('⚠️ AI Service initialization failed:', error.message);
-    }
+    await MarketDataService.initialize();
+    console.log('✅ Market Data Service initialized with database');
     
-    try {
-      await NewsService.initialize();
-      console.log('✅ News Service initialized');
-    } catch (error) {
-      console.warn('⚠️ News Service initialization failed:', error.message);
-    }
+    await AIService.initialize();
+    console.log('✅ AI Service initialized with database');
+    
+    await NewsService.initialize();
+    console.log('✅ News Service initialized with database');
     
     // Initialize real-time service
-    try {
-      const realtimeService = new RealtimeService(io);
-      app.locals.realtimeService = realtimeService;
-      console.log('✅ Real-time Service initialized');
-    } catch (error) {
-      console.warn('⚠️ Real-time Service initialization failed:', error.message);
-    }
+    const realtimeService = new RealtimeService(io);
+    app.locals.realtimeService = realtimeService;
+    console.log('✅ Real-time Service initialized');
     
     // Initialize sentiment analysis service
-    try {
-      const sentimentService = new SentimentAnalysisService();
-      app.locals.sentimentService = sentimentService;
-      setupSentimentEventHandlers(sentimentService, io);
-      console.log('✅ Sentiment Analysis Service initialized');
-    } catch (error) {
-      console.warn('⚠️ Sentiment Analysis Service initialization failed:', error.message);
-    }
+    const sentimentService = new SentimentAnalysisService();
+    app.locals.sentimentService = sentimentService;
+    setupSentimentEventHandlers(sentimentService, io);
+    console.log('✅ Sentiment Analysis Service initialized');
     
     // Initialize Hugging Face service
-    try {
-      const huggingFaceService = new HuggingFaceService();
-      app.locals.huggingFaceService = huggingFaceService;
-      setupHuggingFaceEventHandlers(huggingFaceService, io);
-      console.log('✅ Hugging Face Service initialized');
-    } catch (error) {
-      console.warn('⚠️ Hugging Face Service initialization failed:', error.message);
-    }
+    const huggingFaceService = new HuggingFaceService();
+    app.locals.huggingFaceService = huggingFaceService;
+    setupHuggingFaceEventHandlers(huggingFaceService, io);
+    console.log('✅ Hugging Face Service initialized');
     
     // Start background jobs
-    try {
-      startBackgroundJobs();
-      console.log('✅ Background jobs started');
-    } catch (error) {
-      console.warn('⚠️ Background jobs failed to start:', error.message);
-    }
+    startBackgroundJobs();
+    console.log('✅ Background jobs started');
     
-    console.log('🎉 Server initialization completed!');
-    console.log('💡 Some services may be limited without database connection');
+    console.log('🎉 All services initialized successfully with database!');
+    console.log('💾 Full database connectivity enabled for all features');
     
   } catch (error) {
     console.error('❌ Failed to initialize services:', error);
-    console.log('⚠️ Continuing server startup despite initialization errors');
+    console.error('💡 Database connection is required for full functionality');
+    console.error('🔧 Check your MONGODB_URI environment variable');
+    process.exit(1);
   }
 }
 
