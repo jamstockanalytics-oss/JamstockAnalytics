@@ -6,9 +6,8 @@ LABEL maintainer="JamStockAnalytics Team"
 LABEL description="JamStockAnalytics Web Application"
 LABEL version="1.0.0"
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+# nginx needs to run as root to bind to port 80 and create PID files
+# Security is handled through nginx configuration and container isolation
 
 # Set working directory
 WORKDIR /usr/share/nginx/html
@@ -55,9 +54,6 @@ RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
 # Set proper permissions
 RUN chown -R nginx:nginx /usr/share/nginx/html && \
     chmod -R 755 /usr/share/nginx/html
-
-# Switch to non-root user
-USER nginx
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
