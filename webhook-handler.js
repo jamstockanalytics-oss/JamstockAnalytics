@@ -51,6 +51,22 @@ const validateWebhookSignature = (req, res, next) => {
   next();
 };
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({
+    service: 'jamstockanalytics-webhook',
+    status: 'running',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/health',
+      webhook: '/webhook'
+    },
+    documentation: 'https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({
@@ -370,7 +386,13 @@ app.use((req, res) => {
   res.status(404).json({
     success: false,
     error: 'Not found',
-    message: 'Webhook endpoint not found'
+    message: `Endpoint '${req.method} ${req.path}' not found`,
+    availableEndpoints: {
+      'GET /': 'Service information',
+      'GET /health': 'Health check',
+      'POST /webhook': 'Webhook endpoint'
+    },
+    timestamp: new Date().toISOString()
   });
 });
 
