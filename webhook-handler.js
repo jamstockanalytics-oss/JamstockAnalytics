@@ -144,6 +144,7 @@ server.listen(PORT, '0.0.0.0', () => {
   log(`Webhook handler listening on port ${PORT}`);
   log(`Health check: http://localhost:${PORT}/health`);
   log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
+  log(`Server started successfully on ${PORT}`);
 });
 
 // Handle server errors
