@@ -33,7 +33,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: jamstockanalytics
+          images: jamstockanalytics/jamstockanalytics
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -58,7 +58,7 @@ jobs:
       - name: Build status notification
         run: |
           echo "🚀 Docker build completed successfully!"
-          echo "📦 Image: jamstockanalytics:${{ github.sha }}"
+          echo "📦 Image: jamstockanalytics/jamstockanalytics:${{ github.sha }}"
           echo "🌐 Live site: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/"
           echo "🔧 Configuration: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/web-config.html"
           echo "👀 Preview: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/web-preview.html"
