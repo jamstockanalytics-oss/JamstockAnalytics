@@ -715,31 +715,287 @@ aws s3 sync dist/ s3://your-bucket --delete
 # Build Docker image (lightweight nginx-based)
 docker build -t jamstockanalytics .
 
-# Run container (serves web application on port 8081)
+# Run container (serves web application on port 80, accessible via localhost:8081)
 docker run -p 8081:80 jamstockanalytics
 
-# Using docker-compose
+# Using docker-compose (updated for nginx)
 docker-compose up -d
 ```
 
-**Dockerfile Configuration:**
+**Alternative: Python HTTP Server Deployment:**
+```bash
+# Build Docker image (Python-based alternative)
+docker build -f Dockerfile.python -t jamstockanalytics-python .
+
+# Run container (serves web application on port 8081)
+docker run -p 8081:8081 jamstockanalytics-python
+
+# Using docker-compose with Python alternative
+docker-compose -f docker-compose.python.yml up -d
+```
+
+**Complete nginx Dockerfile (Dockerfile):**
 ```dockerfile
 # Use nginx Alpine for lightweight static file serving
 FROM nginx:alpine
 
-# Copy web application files
-COPY index.html /usr/share/nginx/html/
-COPY web-config.html /usr/share/nginx/html/
-COPY web-preview.html /usr/share/nginx/html/
-COPY static/ /usr/share/nginx/html/static/
-COPY logo.png /usr/share/nginx/html/
-COPY favicon.ico /usr/share/nginx/html/
-COPY *.html /usr/share/nginx/html/
+# Add metadata
+LABEL maintainer="JamStockAnalytics Team"
+LABEL description="JamStockAnalytics Web Application"
+LABEL version="1.0.0"
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nginx && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+
+# Set working directory
+WORKDIR /usr/share/nginx/html
+
+# Copy web application files with proper ownership
+COPY --chown=nginx:nginx index.html ./
+COPY --chown=nginx:nginx web-config.html ./
+COPY --chown=nginx:nginx web-preview.html ./
+COPY --chown=nginx:nginx static/ ./static/
+COPY --chown=nginx:nginx logo.png ./
+COPY --chown=nginx:nginx favicon.ico ./
+COPY --chown=nginx:nginx *.html ./
+
+# Create nginx configuration for optimization
+RUN echo 'server {' > /etc/nginx/conf.d/default.conf && \
+    echo '    listen 80;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    server_name localhost;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    root /usr/share/nginx/html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    index index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Security headers' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-Frame-Options "SAMEORIGIN" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-Content-Type-Options "nosniff" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    add_header X-XSS-Protection "1; mode=block" always;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Gzip compression' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip on;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_vary on;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_min_length 1024;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Cache static assets' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg)$ {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        expires 1y;' >> /etc/nginx/conf.d/default.conf && \
+    echo '        add_header Cache-Control "public, immutable";' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '    ' >> /etc/nginx/conf.d/default.conf && \
+    echo '    # Main location' >> /etc/nginx/conf.d/default.conf && \
+    echo '    location / {' >> /etc/nginx/conf.d/default.conf && \
+    echo '        try_files $uri $uri/ /index.html;' >> /etc/nginx/conf.d/default.conf && \
+    echo '    }' >> /etc/nginx/conf.d/default.conf && \
+    echo '}' >> /etc/nginx/conf.d/default.conf
+
+# Set proper permissions
+RUN chown -R nginx:nginx /usr/share/nginx/html && \
+    chmod -R 755 /usr/share/nginx/html
+
+# Switch to non-root user
+USER nginx
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
 
 # Expose port 80
 EXPOSE 80
 
 # Nginx starts automatically
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+**docker-compose.yml Configuration:**
+```yaml
+version: '3.8'
+
+services:
+  jamstockanalytics:
+    build: .
+    ports:
+      - "8081:80"
+    volumes:
+      - ./static:/usr/share/nginx/html/static:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+      - ./web-config.html:/usr/share/nginx/html/web-config.html:ro
+      - ./web-preview.html:/usr/share/nginx/html/web-preview.html:ro
+      - ./logo.png:/usr/share/nginx/html/logo.png:ro
+      - ./favicon.ico:/usr/share/nginx/html/favicon.ico:ro
+```
+
+**Complete Python HTTP Server Dockerfile (Dockerfile.python):**
+```dockerfile
+# Use Python 3.11 Alpine for lightweight static file serving
+FROM python:3.11-alpine
+
+# Add metadata
+LABEL maintainer="JamStockAnalytics Team"
+LABEL description="JamStockAnalytics Web Application (Python HTTP Server)"
+LABEL version="1.0.0"
+
+# Install required packages for security and functionality
+RUN apk add --no-cache \
+    wget \
+    curl \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G appgroup -g appgroup appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy all web application files with proper ownership
+COPY --chown=appuser:appgroup index.html ./
+COPY --chown=appuser:appgroup web-config.html ./
+COPY --chown=appuser:appgroup web-preview.html ./
+COPY --chown=appuser:appgroup static/ ./static/
+COPY --chown=appuser:appgroup logo.png ./
+COPY --chown=appuser:appgroup favicon.ico ./
+COPY --chown=appuser:appgroup *.html ./
+
+# Create a custom HTTP server script for better control
+RUN echo '#!/usr/bin/env python3' > /app/server.py && \
+    echo 'import http.server' >> /app/server.py && \
+    echo 'import socketserver' >> /app/server.py && \
+    echo 'import os' >> /app/server.py && \
+    echo 'import sys' >> /app/server.py && \
+    echo 'import signal' >> /app/server.py && \
+    echo '' >> /app/server.py && \
+    echo 'class CustomHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):' >> /app/server.py && \
+    echo '    def end_headers(self):' >> /app/server.py && \
+    echo '        # Add security headers' >> /app/server.py && \
+    echo '        self.send_header("X-Frame-Options", "SAMEORIGIN")' >> /app/server.py && \
+    echo '        self.send_header("X-Content-Type-Options", "nosniff")' >> /app/server.py && \
+    echo '        self.send_header("X-XSS-Protection", "1; mode=block")' >> /app/server.py && \
+    echo '        self.send_header("Cache-Control", "public, max-age=3600")' >> /app/server.py && \
+    echo '        super().end_headers()' >> /app/server.py && \
+    echo '' >> /app/server.py && \
+    echo '    def log_message(self, format, *args):' >> /app/server.py && \
+    echo '        # Custom logging format' >> /app/server.py && \
+    echo '        sys.stderr.write(f"[{self.log_date_time_string()}] {format % args}\\n")' >> /app/server.py && \
+    echo '' >> /app/server.py && \
+    echo 'def signal_handler(sig, frame):' >> /app/server.py && \
+    echo '    print("\\nShutting down server...")' >> /app/server.py && \
+    echo '    sys.exit(0)' >> /app/server.py && \
+    echo '' >> /app/server.py && \
+    echo 'if __name__ == "__main__":' >> /app/server.py && \
+    echo '    PORT = int(os.environ.get("PORT", 8081))' >> /app/server.py && \
+    echo '    ' >> /app/server.py && \
+    echo '    # Set up signal handlers for graceful shutdown' >> /app/server.py && \
+    echo '    signal.signal(signal.SIGINT, signal_handler)' >> /app/server.py && \
+    echo '    signal.signal(signal.SIGTERM, signal_handler)' >> /app/server.py && \
+    echo '    ' >> /app/server.py && \
+    echo '    with socketserver.TCPServer(("", PORT), CustomHTTPRequestHandler) as httpd:' >> /app/server.py && \
+    echo '        print(f"Server running on port {PORT}")' >> /app/server.py && \
+    echo '        httpd.serve_forever()' >> /app/server.py
+
+# Make the server script executable
+RUN chmod +x /app/server.py
+
+# Set proper permissions
+RUN chown -R appuser:appgroup /app && \
+    chmod -R 755 /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8081/ || exit 1
+
+# Expose port 8081
+EXPOSE 8081
+
+# Start custom Python HTTP server
+CMD ["python3", "/app/server.py"]
+```
+
+**Dockerfile Usage Examples:**
+
+**Build and Run nginx Version:**
+```bash
+# Build nginx-based image
+docker build -t jamstockanalytics-nginx .
+
+# Run nginx container
+docker run -d -p 8081:80 --name jamstock-nginx jamstockanalytics-nginx
+
+# Check container status
+docker ps
+docker logs jamstock-nginx
+
+# Test the application
+curl http://localhost:8081
+```
+
+**Build and Run Python Version:**
+```bash
+# Build Python-based image
+docker build -f Dockerfile.python -t jamstockanalytics-python .
+
+# Run Python container
+docker run -d -p 8081:8081 --name jamstock-python jamstockanalytics-python
+
+# Check container status
+docker ps
+docker logs jamstock-python
+
+# Test the application
+curl http://localhost:8081
+```
+
+**Production Deployment Commands:**
+```bash
+# nginx Production Deployment
+docker build -t jamstockanalytics:latest .
+docker tag jamstockanalytics:latest your-registry/jamstockanalytics:latest
+docker push your-registry/jamstockanalytics:latest
+
+# Python Production Deployment
+docker build -f Dockerfile.python -t jamstockanalytics-python:latest .
+docker tag jamstockanalytics-python:latest your-registry/jamstockanalytics-python:latest
+docker push your-registry/jamstockanalytics-python:latest
+```
+
+**Dockerfile Feature Comparison:**
+
+| Feature | nginx Dockerfile | Python Dockerfile |
+|---------|------------------|-------------------|
+| **Base Image** | nginx:alpine (~15MB) | python:3.11-alpine (~50MB) |
+| **Security** | Non-root user, security headers | Non-root user, custom headers |
+| **Performance** | Optimized for static files | General-purpose HTTP server |
+| **Caching** | Built-in nginx caching | Custom cache headers |
+| **Compression** | Built-in gzip compression | Basic HTTP server |
+| **Health Checks** | wget-based health check | wget-based health check |
+| **Production Ready** | ✅ Highly optimized | ✅ Good for development |
+| **Customization** | nginx configuration | Custom Python server script |
+| **Resource Usage** | Very low CPU/memory | Moderate CPU/memory |
+| **Scalability** | Excellent for high traffic | Limited concurrent connections |
+
+**Alternative: Python docker-compose.yml (docker-compose.python.yml):**
+```yaml
+version: '3.8'
+
+services:
+  jamstockanalytics-python:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./static:/app/static:ro
+      - ./index.html:/app/index.html:ro
+      - ./web-config.html:/app/web-config.html:ro
+      - ./web-preview.html:/app/web-preview.html:ro
+      - ./logo.png:/app/logo.png:ro
+      - ./favicon.ico:/app/favicon.ico:ro
+      - ./*.html:/app/:ro
 ```
 
 **Benefits of nginx-based Docker setup:**
@@ -749,6 +1005,77 @@ EXPOSE 80
 - ✅ **Static Files:** Perfect for serving HTML, CSS, and JavaScript
 - ✅ **Performance:** nginx is optimized for static content delivery
 - ✅ **Security:** Minimal attack surface with Alpine Linux
+
+**Detailed Comparison: nginx vs Node.js/npm Approach**
+
+| Aspect | nginx Alpine | Node.js/npm |
+|--------|--------------|-------------|
+| **Image Size** | ~15MB | ~100-200MB+ |
+| **Build Time** | 10-30 seconds | 2-5 minutes |
+| **Memory Usage** | 5-10MB | 50-100MB+ |
+| **Dependencies** | None | package.json + node_modules |
+| **Security** | Minimal attack surface | Larger attack surface |
+| **Performance** | Optimized for static files | General-purpose runtime |
+| **Reliability** | Battle-tested web server | Application server |
+| **Maintenance** | Minimal updates needed | Regular dependency updates |
+| **Startup Time** | Instant | 1-3 seconds |
+| **Resource Usage** | Very low CPU/memory | Higher resource consumption |
+
+**Why nginx is Superior for Static Web Applications:**
+
+1. **Resource Efficiency:**
+   - nginx uses ~90% less memory than Node.js
+   - Faster startup and response times
+   - Lower CPU usage for static file serving
+
+2. **Build Process:**
+   - No `npm install` required (saves 2-5 minutes per build)
+   - No dependency vulnerabilities to manage
+   - No package-lock.json conflicts
+
+3. **Production Readiness:**
+   - nginx is designed specifically for web serving
+   - Built-in caching, compression, and security features
+   - Handles thousands of concurrent connections efficiently
+
+4. **Maintenance:**
+   - Fewer moving parts = fewer things to break
+   - No dependency updates or security patches for npm packages
+   - Simpler deployment and rollback procedures
+
+5. **Cost Benefits:**
+   - Smaller Docker images = faster deployments
+   - Lower resource usage = lower hosting costs
+   - Reduced bandwidth for image transfers
+
+**When to Use Python HTTP Server Alternative:**
+
+✅ **Use Python HTTP Server when:**
+- nginx configuration is complex for your environment
+- You need simple debugging and logging
+- Development/testing environments
+- Minimal Docker knowledge required
+- Quick prototyping
+
+✅ **Use nginx when:**
+- Production deployments
+- High performance requirements
+- Security is critical
+- Need advanced features (caching, compression, etc.)
+- Scalability is important
+
+**Python HTTP Server Benefits:**
+- ✅ **Simple Setup:** No configuration files needed
+- ✅ **Easy Debugging:** Clear Python error messages
+- ✅ **Development Friendly:** Easy to modify and test
+- ✅ **Minimal Dependencies:** Just Python standard library
+- ✅ **Quick Start:** Faster for development iterations
+
+**Python HTTP Server Limitations:**
+- ❌ **Performance:** Slower than nginx for high traffic
+- ❌ **Features:** No built-in caching, compression, or security features
+- ❌ **Production:** Not recommended for production workloads
+- ❌ **Concurrency:** Limited concurrent connection handling
 
 ---
 
@@ -1258,7 +1585,7 @@ npx serve .
 
 # Test Docker locally
 docker build -t jamstockanalytics .
-docker run -p 8081:8081 jamstockanalytics
+docker run -p 8081:80 jamstockanalytics
 ```
 
 ### 17.3. Prevention Strategies
@@ -1417,6 +1744,276 @@ docker run -p 8081:8081 jamstockanalytics
    # Start Python HTTP server
    CMD ["python", "-m", "http.server", "8081"]
    ```
+
+### 17.6. Comprehensive Docker Troubleshooting
+
+#### Docker Build Issues
+
+**Issue: Docker Build Context Errors**
+**Symptoms:**
+- `COPY failed: file not found` errors
+- `no such file or directory` during build
+- Build context issues with file paths
+
+**Root Cause:**
+- Missing files in build context
+- Incorrect file paths in Dockerfile
+- .dockerignore excluding necessary files
+
+**Solution:**
+```bash
+# Check build context
+docker build --no-cache -t jamstockanalytics .
+
+# Verify files exist
+ls -la index.html web-config.html static/
+ls -la logo.png favicon.ico
+
+# Check .dockerignore
+cat .dockerignore
+
+# Build with verbose output
+docker build --progress=plain -t jamstockanalytics .
+```
+
+**Issue: Docker Image Size Problems**
+**Symptoms:**
+- Large image sizes (>500MB)
+- Slow build times
+- Registry push failures
+
+**Solution:**
+```bash
+# Use multi-stage builds
+FROM nginx:alpine AS builder
+# ... build steps ...
+FROM nginx:alpine
+COPY --from=builder /app /usr/share/nginx/html
+
+# Optimize image size
+docker images jamstockanalytics
+docker history jamstockanalytics
+
+# Use .dockerignore
+echo "node_modules" >> .dockerignore
+echo ".git" >> .dockerignore
+echo "*.md" >> .dockerignore
+```
+
+#### Docker Runtime Issues
+
+**Issue: Container Won't Start**
+**Symptoms:**
+- `docker run` fails immediately
+- Container exits with code 1
+- Port binding errors
+
+**Diagnosis:**
+```bash
+# Check container logs
+docker logs <container-id>
+
+# Run with interactive mode
+docker run -it jamstockanalytics /bin/sh
+
+# Check port conflicts
+netstat -tulpn | grep :8081
+lsof -i :8081
+
+# Test nginx configuration
+docker run -it jamstockanalytics nginx -t
+```
+
+**Solution:**
+```bash
+# Kill conflicting processes
+sudo kill -9 $(lsof -t -i:8081)
+
+# Use different port
+docker run -p 8082:80 jamstockanalytics
+
+# Check nginx status
+docker exec <container-id> nginx -s reload
+```
+
+**Issue: Static Files Not Loading**
+**Symptoms:**
+- 404 errors for CSS/JS files
+- Broken images
+- Missing static assets
+
+**Diagnosis:**
+```bash
+# Check file permissions
+docker exec <container-id> ls -la /usr/share/nginx/html/
+
+# Test file access
+docker exec <container-id> cat /usr/share/nginx/html/index.html
+
+# Check nginx error logs
+docker exec <container-id> cat /var/log/nginx/error.log
+```
+
+**Solution:**
+```bash
+# Fix file permissions
+docker exec <container-id> chmod -R 755 /usr/share/nginx/html/
+
+# Restart nginx
+docker exec <container-id> nginx -s reload
+
+# Rebuild with correct paths
+docker build --no-cache -t jamstockanalytics .
+```
+
+#### Docker Compose Issues
+
+**Issue: Docker Compose Failures**
+**Symptoms:**
+- `docker-compose up` fails
+- Volume mount errors
+- Service dependency issues
+
+**Diagnosis:**
+```bash
+# Check compose file syntax
+docker-compose config
+
+# Validate services
+docker-compose config --services
+
+# Check for port conflicts
+docker-compose ps
+```
+
+**Solution:**
+```bash
+# Recreate containers
+docker-compose down
+docker-compose up --force-recreate
+
+# Check volume mounts
+docker-compose exec jamstockanalytics ls -la /usr/share/nginx/html/
+
+# Debug with logs
+docker-compose logs jamstockanalytics
+```
+
+#### GitHub Actions Docker Issues
+
+**Issue: GitHub Actions Docker Build Failures**
+**Symptoms:**
+- Workflow fails on Docker build step
+- Registry authentication errors
+- Build timeout issues
+
+**Common Fixes:**
+
+1. **Fix Docker Build Context:**
+```yaml
+- name: Build Docker image
+  run: |
+    # Ensure all files are present
+    ls -la
+    ls -la static/
+    
+    # Build with proper context
+    docker build -t jamstockanalytics .
+```
+
+2. **Fix Registry Authentication:**
+```yaml
+- name: Login to Docker Hub
+  uses: docker/login-action@v2
+  with:
+    username: ${{ secrets.DOCKER_USERNAME }}
+    password: ${{ secrets.DOCKER_PASSWORD }}
+
+- name: Build and push
+  uses: docker/build-push-action@v4
+  with:
+    context: .
+    push: true
+    tags: jamstockanalytics:latest
+```
+
+3. **Fix Build Timeout:**
+```yaml
+- name: Build with timeout
+  run: |
+    timeout 300 docker build -t jamstockanalytics .
+```
+
+**Issue: Docker Registry Push Failures**
+**Symptoms:**
+- `denied: requested access to the resource is denied`
+- Authentication failures
+- Tag naming issues
+
+**Solution:**
+```bash
+# Check authentication
+docker login
+
+# Verify tags
+docker images jamstockanalytics
+
+# Test push locally
+docker push jamstockanalytics:latest
+
+# Use proper naming
+docker tag jamstockanalytics username/jamstockanalytics:latest
+docker push username/jamstockanalytics:latest
+```
+
+#### Advanced Docker Troubleshooting
+
+**Docker System Diagnostics:**
+```bash
+# System information
+docker system df
+docker system info
+
+# Container resource usage
+docker stats
+
+# Network debugging
+docker network ls
+docker network inspect bridge
+
+# Volume debugging
+docker volume ls
+docker volume inspect <volume-name>
+```
+
+**Performance Optimization:**
+```bash
+# Clean up unused resources
+docker system prune -a
+
+# Optimize build cache
+docker build --no-cache -t jamstockanalytics .
+
+# Use buildkit for faster builds
+DOCKER_BUILDKIT=1 docker build -t jamstockanalytics .
+```
+
+**Security Best Practices:**
+```bash
+# Scan for vulnerabilities
+docker scan jamstockanalytics
+
+# Use non-root user
+FROM nginx:alpine
+RUN addgroup -g 1001 -S nginx && \
+    adduser -S -D -H -u 1001 -h /var/cache/nginx -s /sbin/nologin -G nginx -g nginx nginx
+USER nginx
+
+# Minimal base image
+FROM nginx:alpine
+# Remove unnecessary packages
+RUN apk del --no-cache <unnecessary-packages>
+```
 
 ### 17.5. Monitoring & Alerts
 
