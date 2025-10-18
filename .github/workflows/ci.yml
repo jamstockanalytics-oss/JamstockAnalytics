@@ -107,7 +107,9 @@ jobs:
           echo "🚀 Building for Android platform..."
           npx eas build --platform android --non-interactive
           echo "✅ Android build completed successfully!"
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        if: env.EXPO_TOKEN != ''
 
       - name: Build for iOS
         run: |
@@ -115,14 +117,18 @@ jobs:
           echo "🚀 Building for iOS platform..."
           npx eas build --platform ios --non-interactive
           echo "✅ iOS build completed successfully!"
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        if: env.EXPO_TOKEN != ''
 
       - name: Skip Mobile Builds (No EXPO_TOKEN)
         run: |
           echo "⚠️  EXPO_TOKEN not configured - skipping mobile builds"
           echo "💡 Add EXPO_TOKEN to GitHub Secrets to enable Android and iOS builds"
           echo "✅ Web build completed successfully!"
-        if: ${{ secrets.EXPO_TOKEN == '' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        if: env.EXPO_TOKEN == ''
 
   deploy:
     runs-on: ubuntu-latest
