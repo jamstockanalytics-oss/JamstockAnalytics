@@ -38,7 +38,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKER_USERNAME }}/jamstockanalytics
+          images: jamstockanalytics
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -59,7 +59,10 @@ jobs:
 
       - name: Test Docker image
         run: |
-          docker run --rm -d -p 8081:8081 --name test-container ${{ steps.meta.outputs.tags }}
+          # Get the first tag from the metadata output
+          TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n1)
+          echo "🧪 Testing Docker image: $TAG"
+          docker run --rm -d -p 8081:8081 --name test-container $TAG
           sleep 15
           echo "📊 Container logs:"
           docker logs test-container

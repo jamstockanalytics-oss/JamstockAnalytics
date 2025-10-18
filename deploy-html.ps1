@@ -149,10 +149,15 @@ Write-Host "`n🚀 Deploying to GitHub Pages..." -ForegroundColor Blue
 
 try {
     # Switch to gh-pages branch
-    git checkout gh-pages 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Creating gh-pages branch..." -ForegroundColor Yellow
-        git checkout -b gh-pages
+    try {
+        git checkout gh-pages 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Creating gh-pages branch..." -ForegroundColor Yellow
+            git checkout -b gh-pages
+        }
+    } catch {
+        Write-Host "❌ Error switching to gh-pages branch: $($_.Exception.Message)" -ForegroundColor Red
+        exit 1
     }
     
     # Copy HTML files to root
@@ -180,8 +185,15 @@ try {
     Write-Host "❌ Deployment error: $($_.Exception.Message)" -ForegroundColor Red
 }
 
-# Switch back to master
-git checkout master 2>$null
+# Switch back to master (or main if master doesn't exist)
+try {
+    git checkout master 2>$null
+    if ($LASTEXITCODE -ne 0) {
+        git checkout main 2>$null
+    }
+} catch {
+    Write-Host "⚠️ Warning: Could not switch back to master/main branch" -ForegroundColor Yellow
+}
 
 # Final status
 Write-Host "`n📊 Deployment Status Summary" -ForegroundColor Cyan

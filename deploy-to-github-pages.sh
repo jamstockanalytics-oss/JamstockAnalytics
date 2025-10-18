@@ -28,7 +28,12 @@ git add dist/
 git commit -m "Deploy web app to GitHub Pages - $(date)"
 
 # Create and switch to gh-pages branch
-git checkout -b gh-pages 2>/dev/null || git checkout gh-pages
+if ! git checkout -b gh-pages 2>/dev/null; then
+    if ! git checkout gh-pages 2>/dev/null; then
+        echo "❌ Error: Could not create or switch to gh-pages branch"
+        exit 1
+    fi
+fi
 
 # Copy dist contents to root
 cp -r dist/* .
@@ -43,8 +48,10 @@ git commit -m "Deploy web app to GitHub Pages - $(date)"
 echo "📤 Pushing to GitHub Pages..."
 git push origin gh-pages --force
 
-# Switch back to main branch
-git checkout main
+# Switch back to main branch (or master if main doesn't exist)
+if ! git checkout main 2>/dev/null; then
+    git checkout master
+fi
 
 echo "✅ Deployment complete!"
 echo "🌐 Your web app will be available at:"

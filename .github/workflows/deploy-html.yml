@@ -1,0 +1,167 @@
+name: 🚀 Deploy HTML to GitHub Pages
+
+on:
+  push:
+    branches: [ main, master, gh-pages ]
+    paths:
+      - 'index.html'
+      - 'web-config.html'
+      - 'web-preview.html'
+      - 'static/**'
+      - 'logo.png'
+      - 'favicon.ico'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Validate HTML
+        run: |
+          echo "🔍 Validating HTML files..."
+          
+          # Check if main HTML files exist
+          if [ ! -f "index.html" ]; then
+            echo "❌ index.html not found"
+            exit 1
+          fi
+          
+          if [ ! -f "web-config.html" ]; then
+            echo "❌ web-config.html not found"
+            exit 1
+          fi
+          
+          if [ ! -f "web-preview.html" ]; then
+            echo "❌ web-preview.html not found"
+            exit 1
+          fi
+          
+          echo "✅ All HTML files found"
+          
+          # Check for static assets
+          if [ ! -d "static" ]; then
+            echo "⚠️ static directory not found, creating..."
+            mkdir -p static/css static/js
+          fi
+          
+          # Check for logo
+          if [ ! -f "logo.png" ]; then
+            echo "⚠️ logo.png not found"
+          fi
+          
+          if [ ! -f "favicon.ico" ]; then
+            echo "⚠️ favicon.ico not found"
+          fi
+          
+          echo "✅ HTML validation complete"
+
+      - name: Optimize Assets
+        run: |
+          echo "🔧 Optimizing assets for deployment..."
+          
+          # Create optimized directory structure
+          mkdir -p dist
+          
+          # Copy HTML files
+          cp index.html dist/
+          cp web-config.html dist/
+          cp web-preview.html dist/
+          
+          # Copy static assets
+          if [ -d "static" ]; then
+            cp -r static dist/
+          fi
+          
+          # Copy images
+          if [ -f "logo.png" ]; then
+            cp logo.png dist/
+          fi
+          
+          if [ -f "favicon.ico" ]; then
+            cp favicon.ico dist/
+          fi
+          
+          # Create .nojekyll file for GitHub Pages
+          touch dist/.nojekyll
+          
+          # Create robots.txt
+          cat > dist/robots.txt << EOF
+          User-agent: *
+          Allow: /
+          
+          Sitemap: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/sitemap.xml
+          EOF
+          
+          # Create sitemap.xml
+          cat > dist/sitemap.xml << EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+            <url>
+              <loc>https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/</loc>
+              <lastmod>$(date -u +%Y-%m-%dT%H:%M:%S+00:00)</lastmod>
+              <changefreq>daily</changefreq>
+              <priority>1.0</priority>
+            </url>
+            <url>
+              <loc>https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/web-config.html</loc>
+              <lastmod>$(date -u +%Y-%m-%dT%H:%M:%S+00:00)</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+            <url>
+              <loc>https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/web-preview.html</loc>
+              <lastmod>$(date -u +%Y-%m-%dT%H:%M:%S+00:00)</lastmod>
+              <changefreq>weekly</changefreq>
+              <priority>0.8</priority>
+            </url>
+          </urlset>
+          EOF
+          
+          echo "✅ Assets optimized"
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'dist'
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+  post-deploy:
+    runs-on: ubuntu-latest
+    needs: [build, deploy]
+    if: always()
+    steps:
+      - name: Deployment Status
+        run: |
+          if [ "${{ needs.deploy.result }}" == "success" ]; then
+            echo "✅ Deployment successful!"
+            echo "🌐 Site URL: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/"
+            echo "📊 GitHub Pages: https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly/settings/pages"
+          else
+            echo "❌ Deployment failed"
+            echo "🔧 Check the Actions tab for details"
+          fi

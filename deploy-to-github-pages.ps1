@@ -29,7 +29,12 @@ git commit -m "Deploy web app to GitHub Pages - $(Get-Date)"
 try {
     git checkout -b gh-pages
 } catch {
+    # Branch might already exist, try to switch to it
     git checkout gh-pages
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "❌ Error: Could not create or switch to gh-pages branch" -ForegroundColor Red
+        exit 1
+    }
 }
 
 # Copy dist contents to root
@@ -45,8 +50,12 @@ git commit -m "Deploy web app to GitHub Pages - $(Get-Date)"
 Write-Host "📤 Pushing to GitHub Pages..." -ForegroundColor Yellow
 git push origin gh-pages --force
 
-# Switch back to main branch
-git checkout main
+# Switch back to main branch (or master if main doesn't exist)
+try {
+    git checkout main
+} catch {
+    git checkout master
+}
 
 Write-Host "✅ Deployment complete!" -ForegroundColor Green
 Write-Host "🌐 Your web app will be available at:" -ForegroundColor Cyan
