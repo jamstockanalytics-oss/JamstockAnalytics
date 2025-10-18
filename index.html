@@ -319,6 +319,79 @@
             </div>
         </div>
         
+        <!-- Interactive Features Section -->
+        <section class="interactive-features" id="interactive" style="margin: 4rem 0; padding: 3rem 0; background: rgba(255,255,255,0.1); border-radius: 20px;">
+            <h2 style="text-align: center; margin-bottom: 2rem; color: white; font-size: 2.5rem;">🚀 Interactive Platform</h2>
+            <p style="text-align: center; margin-bottom: 3rem; color: white; font-size: 1.2rem;">Experience the full power of AI-powered JSE market analysis</p>
+            
+            <!-- Market Analysis Demo -->
+            <div class="feature-demo" style="background: white; margin: 2rem 0; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">📊 Live Market Analysis</h3>
+                <div class="demo-container">
+                    <div class="input-group" style="margin: 1rem 0;">
+                        <label for="company-select" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Select JSE Company:</label>
+                        <select id="company-select" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                            <option value="">Choose a company...</option>
+                            <option value="NCBFG">NCB Financial Group (NCBFG)</option>
+                            <option value="SGJ">Sagicor Group Jamaica (SGJ)</option>
+                            <option value="JMMB">JMMB Group (JMMB)</option>
+                            <option value="CAC">CAC 2000 Limited (CAC)</option>
+                            <option value="PULSE">Pulse Investments (PULSE)</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="analyzeCompany()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0.5rem;">🔍 Analyze Company</button>
+                    <div id="analysis-result" class="result" style="display: none; background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #4caf50;">
+                        <h4>AI Analysis Result:</h4>
+                        <p id="analysis-text"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- News Feed Demo -->
+            <div class="feature-demo" style="background: white; margin: 2rem 0; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">📰 AI-Powered News Feed</h3>
+                <div class="demo-container">
+                    <button class="btn" onclick="loadNews()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0.5rem;">📈 Load Latest JSE News</button>
+                    <div id="news-feed" class="result" style="display: none; background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #4caf50;">
+                        <h4>Priority News Feed:</h4>
+                        <div id="news-items"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- AI Chat Demo -->
+            <div class="feature-demo" style="background: white; margin: 2rem 0; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">🤖 AI Chat Assistant</h3>
+                <div class="demo-container">
+                    <div class="input-group" style="margin: 1rem 0;">
+                        <label for="chat-input" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Ask about JSE market trends:</label>
+                        <input type="text" id="chat-input" placeholder="e.g., What are the top performing JSE stocks today?" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                    </div>
+                    <button class="btn" onclick="askAI()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0.5rem;">💬 Ask AI</button>
+                    <div id="chat-response" class="result" style="display: none; background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #4caf50;">
+                        <h4>AI Response:</h4>
+                        <p id="chat-text"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Portfolio Tracker Demo -->
+            <div class="feature-demo" style="background: white; margin: 2rem 0; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">💼 Portfolio Tracker</h3>
+                <div class="demo-container">
+                    <div class="input-group" style="margin: 1rem 0;">
+                        <label for="portfolio-input" style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Enter stock symbols (comma separated):</label>
+                        <input type="text" id="portfolio-input" placeholder="e.g., NCBFG, SGJ, JMMB" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                    </div>
+                    <button class="btn" onclick="trackPortfolio()" style="background: #667eea; color: white; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin: 0.5rem;">📊 Track Portfolio</button>
+                    <div id="portfolio-result" class="result" style="display: none; background: #e8f5e8; padding: 1rem; border-radius: 8px; margin: 1rem 0; border-left: 4px solid #4caf50;">
+                        <h4>Portfolio Analysis:</h4>
+                        <div id="portfolio-data"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
         <div class="footer">
             <h3>Ready to Get Started?</h3>
             <p>Join thousands of investors using AI-powered insights for better market analysis.</p>
@@ -377,6 +450,170 @@
                 // Add analytics tracking here
             });
         });
+        
+        // Interactive Features JavaScript
+        const demoData = {
+            companies: {
+                'NCBFG': {
+                    name: 'NCB Financial Group',
+                    price: '$85.50',
+                    change: '+2.3%',
+                    analysis: 'Strong performance with positive market sentiment. AI recommends HOLD with potential for growth.'
+                },
+                'SGJ': {
+                    name: 'Sagicor Group Jamaica',
+                    price: '$45.20',
+                    change: '+1.8%',
+                    analysis: 'Stable performance with consistent dividends. AI recommends BUY for long-term investors.'
+                },
+                'JMMB': {
+                    name: 'JMMB Group',
+                    price: '$12.75',
+                    change: '-0.5%',
+                    analysis: 'Minor decline but strong fundamentals. AI recommends HOLD with monitoring.'
+                },
+                'CAC': {
+                    name: 'CAC 2000 Limited',
+                    price: '$8.90',
+                    change: '+0.8%',
+                    analysis: 'Steady growth with good market position. AI recommends BUY for medium-term gains.'
+                },
+                'PULSE': {
+                    name: 'Pulse Investments',
+                    price: '$15.30',
+                    change: '+1.2%',
+                    analysis: 'Positive momentum with strong fundamentals. AI recommends HOLD with potential upside.'
+                }
+            },
+            news: [
+                {
+                    title: 'JSE Market Shows Strong Q4 Performance',
+                    priority: 'High',
+                    summary: 'Jamaica Stock Exchange reports 15% growth in Q4 with strong investor confidence.',
+                    time: '2 hours ago'
+                },
+                {
+                    title: 'NCB Financial Group Announces Dividend',
+                    priority: 'Medium',
+                    summary: 'NCB declares quarterly dividend of $0.25 per share, payable next month.',
+                    time: '4 hours ago'
+                },
+                {
+                    title: 'Banking Sector Leads Market Gains',
+                    priority: 'Medium',
+                    summary: 'Local banking stocks show resilience amid global market volatility.',
+                    time: '6 hours ago'
+                },
+                {
+                    title: 'JSE Technology Stocks Surge',
+                    priority: 'High',
+                    summary: 'Technology sector shows 8% growth with strong investor interest.',
+                    time: '8 hours ago'
+                }
+            ]
+        };
+        
+        function analyzeCompany() {
+            const company = document.getElementById('company-select').value;
+            const result = document.getElementById('analysis-result');
+            const text = document.getElementById('analysis-text');
+            
+            if (company && demoData.companies[company]) {
+                const data = demoData.companies[company];
+                text.innerHTML = `
+                    <strong>${data.name} (${company})</strong><br>
+                    Current Price: ${data.price}<br>
+                    Change: ${data.change}<br><br>
+                    <strong>AI Analysis:</strong> ${data.analysis}
+                `;
+                result.style.display = 'block';
+            } else {
+                text.innerHTML = 'Please select a company to analyze.';
+                result.style.display = 'block';
+            }
+        }
+        
+        function loadNews() {
+            const newsFeed = document.getElementById('news-feed');
+            const newsItems = document.getElementById('news-items');
+            
+            let html = '';
+            demoData.news.forEach((item, index) => {
+                const priorityColor = item.priority === 'High' ? '#ff6b6b' : '#4ecdc4';
+                html += `
+                    <div style="margin: 1rem 0; padding: 1rem; background: white; border-radius: 8px; border-left: 4px solid ${priorityColor}; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <h4 style="color: #333; margin-bottom: 0.5rem;">${item.title}</h4>
+                        <p style="margin: 0.5rem 0;"><strong>Priority:</strong> <span style="color: ${priorityColor}; font-weight: bold;">${item.priority}</span></p>
+                        <p style="margin: 0.5rem 0; color: #666;">${item.summary}</p>
+                        <p style="margin: 0.5rem 0; font-size: 0.9rem; color: #999;">${item.time}</p>
+                    </div>
+                `;
+            });
+            
+            newsItems.innerHTML = html;
+            newsFeed.style.display = 'block';
+        }
+        
+        function askAI() {
+            const input = document.getElementById('chat-input').value;
+            const response = document.getElementById('chat-response');
+            const text = document.getElementById('chat-text');
+            
+            if (input.trim()) {
+                text.innerHTML = `
+                    <strong>Your Question:</strong> ${input}<br><br>
+                    <strong>AI Response:</strong> Based on current JSE market data, I can see strong performance across banking and financial sectors. The market is showing resilience with key indicators pointing to continued growth. I recommend monitoring NCBFG and SGJ for potential opportunities. The technology sector is also showing promising signs with 8% growth this quarter.
+                `;
+                response.style.display = 'block';
+            } else {
+                text.innerHTML = 'Please enter a question about JSE market trends.';
+                response.style.display = 'block';
+            }
+        }
+        
+        function trackPortfolio() {
+            const input = document.getElementById('portfolio-input').value;
+            const result = document.getElementById('portfolio-result');
+            const data = document.getElementById('portfolio-data');
+            
+            if (input.trim()) {
+                const symbols = input.split(',').map(s => s.trim().toUpperCase());
+                let html = '<h4>Portfolio Summary:</h4>';
+                let totalValue = 0;
+                let totalChange = 0;
+                
+                symbols.forEach(symbol => {
+                    if (demoData.companies[symbol]) {
+                        const company = demoData.companies[symbol];
+                        const value = parseFloat(company.price.replace('$', ''));
+                        const change = parseFloat(company.change.replace('%', '').replace('+', ''));
+                        totalValue += value * 100; // Assuming 100 shares each
+                        totalChange += change;
+                        
+                        html += `
+                            <div style="margin: 0.5rem 0; padding: 0.5rem; background: white; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                                <strong>${symbol}</strong> - ${company.name}<br>
+                                Price: ${company.price} | Change: ${company.change} | Value: $${(value * 100).toFixed(2)}
+                            </div>
+                        `;
+                    }
+                });
+                
+                const avgChange = totalChange / symbols.length;
+                html += `
+                    <div style="margin: 1rem 0; padding: 1rem; background: #e8f5e8; border-radius: 8px; border-left: 4px solid #4caf50;">
+                        <p><strong>Total Portfolio Value:</strong> $${totalValue.toFixed(2)}</p>
+                        <p><strong>Average Change:</strong> ${avgChange.toFixed(1)}%</p>
+                        <p><strong>AI Recommendation:</strong> ${avgChange > 0 ? 'Portfolio showing positive momentum' : 'Consider rebalancing portfolio'}</p>
+                    </div>
+                `;
+                data.innerHTML = html;
+                result.style.display = 'block';
+            } else {
+                data.innerHTML = 'Please enter stock symbols to track.';
+                result.style.display = 'block';
+            }
+        }
     </script>
 </body>
 </html>
