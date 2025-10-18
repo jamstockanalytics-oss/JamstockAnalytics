@@ -3680,7 +3680,7 @@ docker exec jamstockanalytics nginx -T
 
 #### Automated Docker Build Process
 
-**GitHub Actions Docker Workflow with Build Cloud:**
+**GitHub Actions Docker Workflow (Free):**
 ```yaml
 # .github/workflows/docker-build.yml
 name: Docker Build and Push
@@ -3707,11 +3707,6 @@ jobs:
       
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          # Enable Docker Build Cloud for faster builds
-          driver-opts: |
-            image=moby/buildkit:latest
-            network=host
       
       - name: Login to Docker Hub
         uses: docker/login-action@v2
@@ -3730,7 +3725,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=${{ github.event.inputs.tag }},enable={{is_default_branch}}
       
-      - name: Build and push Docker image with Build Cloud
+      - name: Build and push Docker image
         uses: docker/build-push-action@v4
         with:
           context: .
@@ -3738,16 +3733,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Enhanced caching with Build Cloud
-          cache-from: |
-            type=gha
-            type=registry,ref=jamstockanalytics:buildcache
-          cache-to: |
-            type=gha,mode=max
-            type=registry,ref=jamstockanalytics:buildcache,mode=max
-          # Build Cloud optimizations
-          build-args: |
-            BUILDKIT_INLINE_CACHE=1
+          # Free GitHub Actions caching
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       
       - name: Docker image digest
         run: echo ${{ steps.build.outputs.digest }}
@@ -3757,7 +3745,6 @@ jobs:
           echo "🚀 Docker build completed successfully!"
           echo "📦 Image: jamstockanalytics:${{ github.sha }}"
           echo "🌐 Live site: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/"
-          echo "⚡ Build Cloud acceleration enabled!"
 ```
 
 #### Manual Docker Build and Push Commands
@@ -3795,73 +3782,62 @@ echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
 docker push ghcr.io/jamstockanalytics-oss/jamstockanalytics:latest
 ```
 
-#### Docker Build Cloud Benefits for JamStockAnalytics
+#### Free Docker Build Optimization for JamStockAnalytics
 
-**Why Docker Build Cloud is Perfect for Your Project:**
+**Why Free Docker Buildx is Perfect for Your Project:**
 
-**1. Speed Improvements:**
-- **2-5x faster builds** compared to local builds
-- **Shared caching** across your entire team
-- **Parallel layer processing** for nginx Alpine images
-- **No local resource usage** - builds run in the cloud
-
-**2. Multi-Platform Support:**
+**1. Multi-Platform Support:**
 - **Native ARM64/AMD64** builds for different architectures
 - **Single command** for all platforms
 - **Optimized for nginx Alpine** base images
 - **Perfect for production deployment**
 
-**3. Team Collaboration:**
-- **Shared build cache** across developers
-- **Consistent build environment** for everyone
-- **No "works on my machine" issues**
-- **Encrypted data transfer** for security
+**2. GitHub Actions Caching:**
+- **Free caching** with GitHub Actions
+- **Faster subsequent builds** using cache
+- **No additional costs** for caching
+- **Automatic cache management**
 
-**4. Cost Efficiency:**
-- **No local infrastructure** required
-- **Pay-per-use** model
-- **Faster development cycles** = more productivity
-- **Reduced CI/CD costs** with faster builds
+**3. Cost Efficiency:**
+- **Completely free** with GitHub Actions
+- **No additional infrastructure** required
+- **Fast development cycles** with caching
+- **No subscription costs**
 
-#### Docker Build Cloud Setup
+#### Free Docker Buildx Setup
 
-**1. Enable Docker Build Cloud:**
+**1. Enable Docker Buildx (Free):**
 ```bash
-# Install Docker Build Cloud CLI
-docker buildx create --use --name cloud-builder --driver docker-container
+# Use free Docker Buildx for multi-platform builds
+docker buildx create --use --name multi-builder
 
 # Configure for JamStockAnalytics
 export DOCKER_BUILDKIT=1
-export BUILDX_EXPERIMENTAL=1
 
-# Test cloud builder
+# Test builder
 docker buildx ls
 ```
 
-**2. Optimized Build Commands:**
+**2. Optimized Build Commands (Free):**
 ```bash
-# Build with Build Cloud acceleration
+# Build with multi-platform support
 docker buildx build --platform linux/amd64,linux/arm64 \
   --tag jamstockanalytics:latest \
   --push .
 
-# Build with enhanced caching
+# Build with GitHub Actions caching
 docker buildx build --platform linux/amd64,linux/arm64 \
   --tag jamstockanalytics:latest \
-  --cache-from type=registry,ref=jamstockanalytics:buildcache \
-  --cache-to type=registry,ref=jamstockanalytics:buildcache,mode=max \
+  --cache-from type=gha \
+  --cache-to type=gha,mode=max \
   --push .
 ```
 
-**3. GitHub Actions Integration:**
+**3. GitHub Actions Integration (Free):**
 ```yaml
-# Enhanced workflow with Build Cloud
+# Free workflow with caching
 - name: Set up Docker Buildx
   uses: docker/setup-buildx-action@v3
-  with:
-    driver-opts: |
-      image=moby/buildkit:latest
-      network=host
 ```
 
 #### Docker Build Optimization
@@ -4251,22 +4227,19 @@ NODE_ENV=production
 - Set visibility: Public
 - Add description: "AI-Powered Jamaica Stock Exchange Market Analysis"
 
-**3. Docker Build Cloud Setup (Recommended):**
+**3. Free Docker Build Optimization:**
 ```bash
-# Install Docker Build Cloud CLI
-# This accelerates builds with cloud-based infrastructure
-docker buildx create --use --name cloud-builder --driver docker-container
+# Use free Docker Buildx for multi-platform builds
+docker buildx create --use --name multi-builder
 
-# Configure for faster builds
+# Configure for faster builds (free)
 export DOCKER_BUILDKIT=1
-export BUILDX_EXPERIMENTAL=1
 
-# Benefits for JamStockAnalytics:
-# ✅ Faster builds (2-5x speed improvement)
-# ✅ Shared caching across team
+# Free benefits for JamStockAnalytics:
 # ✅ Multi-platform builds (AMD64/ARM64)
-# ✅ No local resource usage
-# ✅ Encrypted data transfer
+# ✅ GitHub Actions caching
+# ✅ Optimized nginx Alpine builds
+# ✅ No additional costs
 ```
 
 **4. Production Domain Configuration:**
