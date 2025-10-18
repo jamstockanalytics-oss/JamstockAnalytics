@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JamStockAnalytics - AI-Powered Jamaica Stock Exchange Analysis</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <nav>
+                <div class="logo">
+                    <img src="/logo.png" alt="JamStockAnalytics" height="40">
+                    <span>JamStockAnalytics</span>
+                </div>
+                <div class="nav-links">
+                    <a href="/">Home</a>
+                    <a href="/market">Market</a>
+                    <a href="/analysis">Analysis</a>
+                    <a href="/portfolio">Portfolio</a>
+                    <a href="/login">Login</a>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            <section class="hero">
+                <h1>AI-Powered Jamaica Stock Exchange Analysis</h1>
+                <p>Advanced market insights powered by artificial intelligence for the Jamaican Stock Exchange and Junior Market.</p>
+                <div class="cta-buttons">
+                    <a href="/market" class="btn btn-primary">View Market Data</a>
+                    <a href="/analysis" class="btn btn-secondary">Start Analysis</a>
+                </div>
+            </section>
+
+            <section class="features">
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🤖 AI Analysis</h3>
+                        <p>Get intelligent market insights powered by advanced AI algorithms.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📊 Real-time Data</h3>
+                        <p>Access live market data from the Jamaica Stock Exchange.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📈 Portfolio Tracking</h3>
+                        <p>Monitor your investments with comprehensive portfolio analytics.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>📰 News Analysis</h3>
+                        <p>Stay informed with AI-analyzed financial news and sentiment.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2024 JamStockAnalytics. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io();
+        
+        // Handle real-time updates
+        socket.on('market-update', (data) => {
+            console.log('Market update received:', data);
+            // Update UI with new market data
+        });
+        
+        socket.on('news-update', (data) => {
+            console.log('News update received:', data);
+            // Update UI with new news
+        });
+        
+        socket.on('ai-analysis', (data) => {
+            console.log('AI analysis received:', data);
+            // Update UI with AI analysis
+        });
+    </script>
+</body>
+</html>

@@ -41,23 +41,31 @@ class AIService {
     return response.data;
   }
 
-  async analyzeStock(symbol, marketData, newsData) {
+  async analyzeStock(symbol, userId) {
     try {
       if (!this.isInitialized) {
-        return this.generateMockAnalysis(symbol, marketData);
+        return this.generateMockAnalysis(symbol);
       }
 
-      const prompt = this.buildAnalysisPrompt(symbol, marketData, newsData);
+      // Get market data for the symbol
+      const MarketData = require('../models/MarketData');
+      const marketData = await MarketData.findOne({ symbol: symbol.toUpperCase() });
+      
+      if (!marketData) {
+        return this.generateMockAnalysis(symbol);
+      }
+
+      const prompt = this.buildAnalysisPrompt(symbol, marketData);
       const response = await this.callDeepSeekAPI(prompt);
       
       return this.parseAIResponse(response);
     } catch (error) {
       console.error('AI analysis failed:', error);
-      return this.generateMockAnalysis(symbol, marketData);
+      return this.generateMockAnalysis(symbol);
     }
   }
 
-  buildAnalysisPrompt(symbol, marketData, newsData) {
+  buildAnalysisPrompt(symbol, marketData) {
     return `
 Analyze the following Jamaica Stock Exchange (JSE) stock data and provide investment insights:
 
@@ -68,8 +76,7 @@ Volume: ${marketData.volume}
 Market Cap: $${marketData.marketCap}
 Sector: ${marketData.sector}
 
-Recent News:
-${newsData.slice(0, 5).map(news => `- ${news.title}: ${news.summary}`).join('\n')}
+Recent News: No recent news data available
 
 Please provide:
 1. Investment recommendation (strong_buy, buy, hold, sell, strong_sell)
@@ -130,12 +137,12 @@ Respond in JSON format:
     }
   }
 
-  generateMockAnalysis(symbol, marketData) {
+  generateMockAnalysis(symbol) {
     const recommendations = ['strong_buy', 'buy', 'hold', 'sell', 'strong_sell'];
     const riskLevels = ['low', 'medium', 'high'];
     const sentiments = ['very_positive', 'positive', 'neutral', 'negative', 'very_negative'];
     
-    const change = marketData?.changePercentage || 0;
+    const change = Math.random() * 10 - 5; // Random change between -5% and +5%
     let recommendation = 'hold';
     let confidence = 50;
     let sentiment = 'neutral';
@@ -157,7 +164,7 @@ Respond in JSON format:
     return {
       recommendation,
       confidence: Math.round(confidence),
-      priceTarget: marketData?.currentPrice * (0.9 + Math.random() * 0.2),
+      priceTarget: 50 + Math.random() * 100, // Random price target between 50-150
       riskLevel: riskLevels[Math.floor(Math.random() * riskLevels.length)],
       keyFactors: [
         'Market volatility',
@@ -287,6 +294,37 @@ Provide a helpful, accurate response about JSE market conditions, specific stock
       ],
       timestamp: new Date()
     };
+  }
+
+  async getUserRecommendations(userId) {
+    try {
+      // Mock user recommendations
+      return {
+        success: true,
+        data: [
+          {
+            symbol: 'NCBFG',
+            name: 'NCB Financial Group',
+            recommendation: 'buy',
+            confidence: 85,
+            reason: 'Strong banking fundamentals'
+          },
+          {
+            symbol: 'SGJ',
+            name: 'Sagicor Group Jamaica',
+            recommendation: 'hold',
+            confidence: 70,
+            reason: 'Stable performance'
+          }
+        ]
+      };
+    } catch (error) {
+      console.error('User recommendations failed:', error);
+      return {
+        success: false,
+        message: 'Failed to fetch user recommendations'
+      };
+    }
   }
 }
 
