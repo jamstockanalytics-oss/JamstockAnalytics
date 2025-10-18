@@ -712,15 +712,43 @@ aws s3 sync dist/ s3://your-bucket --delete
 
 **Docker Deployment:**
 ```bash
-# Build Docker image
+# Build Docker image (lightweight nginx-based)
 docker build -t jamstockanalytics .
 
 # Run container (serves web application on port 8081)
-docker run -p 8081:8081 jamstockanalytics
+docker run -p 8081:80 jamstockanalytics
 
 # Using docker-compose
 docker-compose up -d
 ```
+
+**Dockerfile Configuration:**
+```dockerfile
+# Use nginx Alpine for lightweight static file serving
+FROM nginx:alpine
+
+# Copy web application files
+COPY index.html /usr/share/nginx/html/
+COPY web-config.html /usr/share/nginx/html/
+COPY web-preview.html /usr/share/nginx/html/
+COPY static/ /usr/share/nginx/html/static/
+COPY logo.png /usr/share/nginx/html/
+COPY favicon.ico /usr/share/nginx/html/
+COPY *.html /usr/share/nginx/html/
+
+# Expose port 80
+EXPOSE 80
+
+# Nginx starts automatically
+```
+
+**Benefits of nginx-based Docker setup:**
+- ✅ **Lightweight:** nginx Alpine image is much smaller than Node.js
+- ✅ **Fast Build:** No npm dependencies or complex build processes
+- ✅ **Reliable:** nginx is production-ready and battle-tested
+- ✅ **Static Files:** Perfect for serving HTML, CSS, and JavaScript
+- ✅ **Performance:** nginx is optimized for static content delivery
+- ✅ **Security:** Minimal attack surface with Alpine Linux
 
 ---
 
@@ -1334,40 +1362,60 @@ docker run -p 8081:8081 jamstockanalytics
 
 #### If Docker Builds Fail:
 
-1. **Check Dockerfile:**
+1. **Use Simplified nginx Dockerfile:**
    ```dockerfile
-   # Ensure proper base image
-   FROM node:18-alpine
+   # Use nginx Alpine for lightweight static file serving
+   FROM nginx:alpine
    
-   # Set working directory
-   WORKDIR /app
+   # Copy web application files
+   COPY index.html /usr/share/nginx/html/
+   COPY web-config.html /usr/share/nginx/html/
+   COPY web-preview.html /usr/share/nginx/html/
+   COPY static/ /usr/share/nginx/html/static/
+   COPY logo.png /usr/share/nginx/html/
+   COPY favicon.ico /usr/share/nginx/html/
+   COPY *.html /usr/share/nginx/html/
    
-   # Copy package files
-   COPY package*.json ./
+   # Expose port 80
+   EXPOSE 80
    
-   # Install dependencies
-   RUN npm ci --only=production
-   
-   # Copy source code
-   COPY . .
-   
-   # Expose port
-   EXPOSE 8081
-   
-   # Start application
-   CMD ["npm", "start"]
+   # Nginx starts automatically
    ```
 
 2. **Test Locally:**
    ```bash
-   # Build image
+   # Build image (much faster with nginx)
    docker build -t jamstockanalytics .
    
    # Run container
-   docker run -p 8081:8081 jamstockanalytics
+   docker run -p 8081:80 jamstockanalytics
    
    # Check logs
    docker logs <container-id>
+   ```
+
+3. **Alternative: Python HTTP Server (if nginx issues):**
+   ```dockerfile
+   # Use Python 3.11 Alpine for lightweight static file serving
+   FROM python:3.11-alpine
+   
+   # Set working directory
+   WORKDIR /app
+   
+   # Copy all web application files
+   COPY index.html .
+   COPY web-config.html .
+   COPY web-preview.html .
+   COPY static/ ./static/
+   COPY logo.png .
+   COPY favicon.ico .
+   COPY *.html .
+   
+   # Expose port 8081
+   EXPOSE 8081
+   
+   # Start Python HTTP server
+   CMD ["python", "-m", "http.server", "8081"]
    ```
 
 ### 17.5. Monitoring & Alerts
