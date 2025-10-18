@@ -1,0 +1,123 @@
+name: Webhook Monitoring
+
+on:
+  schedule:
+    # Run every 5 minutes to monitor webhook health
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'health'
+        type: choice
+        options:
+          - health
+          - webhook
+          - full
+      environment:
+        description: 'Environment to test'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+jobs:
+  webhook-monitor:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Health Check
+      id: health_check
+      run: |
+        echo "🔍 Checking webhook health..."
+        
+        WEBHOOK_URL="https://jamstockanalytics-webhook.onrender.com"
+        
+        # Test health endpoint
+        HEALTH_RESPONSE=$(curl -s -w "\n%{http_code}" "$WEBHOOK_URL/health")
+        HEALTH_BODY=$(echo "$HEALTH_RESPONSE" | head -n -1)
+        HEALTH_STATUS=$(echo "$HEALTH_RESPONSE" | tail -n 1)
+        
+        echo "Health Status: $HEALTH_STATUS"
+        echo "Health Response: $HEALTH_BODY"
+        
+        if [ "$HEALTH_STATUS" = "200" ]; then
+          echo "✅ Health check passed"
+          echo "health_status=success" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Health check failed with status: $HEALTH_STATUS"
+          echo "health_status=failed" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+    - name: Webhook Endpoint Test
+      if: github.event.inputs.test_type == 'webhook' || github.event.inputs.test_type == 'full'
+      run: |
+        echo "🔍 Testing webhook endpoint..."
+        
+        WEBHOOK_URL="https://jamstockanalytics-webhook.onrender.com"
+        
+        # Test webhook endpoint (should return 404 for GET, which is expected)
+        WEBHOOK_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$WEBHOOK_URL/webhook")
+        
+        echo "Webhook Status: $WEBHOOK_STATUS"
+        
+        if [ "$WEBHOOK_STATUS" = "404" ]; then
+          echo "✅ Webhook endpoint correctly returns 404 for GET requests"
+        else
+          echo "⚠️ Unexpected response from webhook endpoint: $WEBHOOK_STATUS"
+        fi
+        
+    - name: Performance Test
+      if: github.event.inputs.test_type == 'full'
+      run: |
+        echo "⚡ Running performance tests..."
+        
+        WEBHOOK_URL="https://jamstockanalytics-webhook.onrender.com"
+        
+        # Test response time
+        RESPONSE_TIME=$(curl -s -w "%{time_total}" -o /dev/null "$WEBHOOK_URL/health")
+        echo "Response time: ${RESPONSE_TIME}s"
+        
+        # Test multiple requests
+        echo "Testing multiple concurrent requests..."
+        for i in {1..5}; do
+          curl -s "$WEBHOOK_URL/health" > /dev/null &
+        done
+        wait
+        
+        echo "✅ Performance test completed"
+        
+    - name: Create monitoring report
+      if: always()
+      run: |
+        echo "## 🔍 Webhook Monitoring Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Timestamp:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "**Environment:** ${{ github.event.inputs.environment || 'production' }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Test Type:** ${{ github.event.inputs.test_type || 'health' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Health Status:** ${{ steps.health_check.outputs.health_status || 'unknown' }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Endpoints:**" >> $GITHUB_STEP_SUMMARY
+        echo "- Health: https://jamstockanalytics-webhook.onrender.com/health" >> $GITHUB_STEP_SUMMARY
+        echo "- Webhook: https://jamstockanalytics-webhook.onrender.com/webhook" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Next Check:** $(date -u -d '+5 minutes' '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        
+    - name: Alert on failure
+      if: failure()
+      run: |
+        echo "🚨 Webhook monitoring detected issues!"
+        echo "Please check the webhook service status at:"
+        echo "https://dashboard.render.com"
+        echo ""
+        echo "Webhook URL: https://jamstockanalytics-webhook.onrender.com"
+        echo "Health Check: https://jamstockanalytics-webhook.onrender.com/health"

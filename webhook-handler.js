@@ -30,12 +30,24 @@ function verifySignature(payload, signature) {
     return true;
   }
   
+  // Check if signature exists
+  if (!signature) {
+    log('WARNING: No signature provided', 'WARN');
+    return false;
+  }
+  
   const expectedSignature = crypto
     .createHmac('sha256', SECRET)
     .update(payload)
     .digest('hex');
     
   const providedSignature = signature.replace('sha256=', '');
+  
+  // Ensure both signatures are the same length for timingSafeEqual
+  if (expectedSignature.length !== providedSignature.length) {
+    log(`Signature length mismatch: expected ${expectedSignature.length}, got ${providedSignature.length}`, 'WARN');
+    return false;
+  }
   
   return crypto.timingSafeEqual(
     Buffer.from(expectedSignature, 'hex'),
@@ -107,6 +119,8 @@ const server = http.createServer((req, res) => {
       try {
         const signature = req.headers['x-hub-signature-256'];
         
+        log(`Received webhook request with signature: ${signature ? 'present' : 'missing'}`);
+        
         // Verify signature
         if (!verifySignature(body, signature)) {
           log('Invalid webhook signature', 'ERROR');
@@ -126,6 +140,7 @@ const server = http.createServer((req, res) => {
         
       } catch (error) {
         log(`Error processing webhook: ${error.message}`, 'ERROR');
+        log(`Error stack: ${error.stack}`, 'ERROR');
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: 'Bad Request' }));
       }

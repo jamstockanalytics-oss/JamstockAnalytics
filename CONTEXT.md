@@ -9,6 +9,8 @@ This document outlines the specifications for a web application designed to aggr
 - Backend/Database: Supabase
 - UI Framework: Responsive Web Design
 - AI Processing: DeepSeek
+- Webhook Infrastructure: Node.js webhook handler with Docker Hub integration
+- Cloud Deployment: Render.com with automated webhook deployments
 
 ---
 
@@ -708,6 +710,338 @@ aws s3 sync dist/ s3://your-bucket --delete
 
 # Any static hosting service
 # Upload dist/ folder contents to your hosting provider
+```
+
+### 13.4. Webhook Cloud Deployment Configuration
+
+**Webhook Infrastructure Overview:**
+The JamStockAnalytics webhook system provides automated deployment capabilities through Docker Hub integration and Render.com cloud hosting.
+
+**Webhook Service Architecture:**
+```
+Docker Hub → Webhook (Render) → Deployment Scripts → Target Services
+```
+
+**Current Webhook Endpoints:**
+- **Health Check**: `https://jamstockanalytics-webhook.onrender.com/health`
+- **Webhook Handler**: `https://jamstockanalytics-webhook.onrender.com/webhook`
+- **Status**: ✅ Operational with enhanced error handling
+
+**Webhook Deployment Configuration:**
+
+#### 13.4.1. Render.com Webhook Service Setup
+
+**Service Configuration:**
+```yaml
+# render-webhook.yaml
+services:
+  webhook:
+    name: jamstockanalytics-webhook
+    type: web
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node webhook-handler.js
+    envVars:
+      - key: WEBHOOK_PORT
+        value: 3000
+      - key: WEBHOOK_SECRET
+        value: your-webhook-secret
+      - key: DOCKER_IMAGE
+        value: jamstockanalytics/jamstockanalytics
+```
+
+**Deployment Commands:**
+```bash
+# Deploy webhook to Render
+render deploy --service jamstockanalytics-webhook
+
+# Or use Render dashboard:
+# 1. Go to https://dashboard.render.com
+# 2. Create new Web Service
+# 3. Connect GitHub repository
+# 4. Configure environment variables
+# 5. Deploy
+```
+
+#### 13.4.2. Docker Hub Webhook Integration
+
+**Docker Hub Webhook Configuration:**
+```json
+{
+  "name": "jamstockanalytics-deployment",
+  "url": "https://jamstockanalytics-webhook.onrender.com/webhook",
+  "content_type": "application/json",
+  "secret": "your-webhook-secret",
+  "events": ["push"],
+  "active": true
+}
+```
+
+**Webhook Security:**
+```javascript
+// Enhanced signature verification
+function verifySignature(payload, signature) {
+  if (!SECRET) {
+    log('WARNING: No webhook secret configured', 'WARN');
+    return true;
+  }
+  
+  // Check if signature exists
+  if (!signature) {
+    log('WARNING: No signature provided', 'WARN');
+    return false;
+  }
+  
+  const expectedSignature = crypto
+    .createHmac('sha256', SECRET)
+    .update(payload)
+    .digest('hex');
+    
+  const providedSignature = signature.replace('sha256=', '');
+  
+  // Ensure both signatures are the same length for timingSafeEqual
+  if (expectedSignature.length !== providedSignature.length) {
+    log(`Signature length mismatch: expected ${expectedSignature.length}, got ${providedSignature.length}`, 'WARN');
+    return false;
+  }
+  
+  return crypto.timingSafeEqual(
+    Buffer.from(expectedSignature, 'hex'),
+    Buffer.from(providedSignature, 'hex')
+  );
+}
+```
+
+#### 13.4.3. Automated Deployment Pipeline
+
+**Deployment Flow:**
+1. **Code Push** → GitHub repository updated
+2. **Docker Build** → GitHub Actions builds Docker image
+3. **Docker Push** → Image pushed to Docker Hub
+4. **Webhook Trigger** → Docker Hub sends webhook to Render
+5. **Deployment** → Webhook handler processes and deploys
+
+**Testing the Pipeline:**
+```bash
+# Trigger test deployment
+docker tag jamstockanalytics/jamstockanalytics:latest jamstockanalytics/jamstockanalytics:test-$(date +%Y%m%d-%H%M%S)
+docker push jamstockanalytics/jamstockanalytics:test-$(date +%Y%m%d-%H%M%S)
+
+# Monitor webhook activity
+curl https://jamstockanalytics-webhook.onrender.com/health
+```
+
+#### 13.4.4. Webhook Monitoring and Health Checks
+
+**Health Check Endpoints:**
+```bash
+# Basic health check
+curl https://jamstockanalytics-webhook.onrender.com/health
+
+# Expected response:
+# {"status":"healthy","timestamp":"2025-10-18T07:30:07.309Z"}
+```
+
+**Monitoring Configuration:**
+```javascript
+// Webhook monitoring setup
+const monitoring = {
+  healthCheck: '/health',
+  webhookEndpoint: '/webhook',
+  logLevel: 'INFO',
+  errorHandling: 'enhanced',
+  signatureVerification: 'enabled'
+};
+```
+
+**Deployment Status Tracking:**
+- ✅ **Webhook Service**: Operational on Render
+- ✅ **Docker Integration**: Connected to Docker Hub
+- ✅ **Security**: Enhanced signature verification
+- ✅ **Error Handling**: Robust error management
+- ✅ **Monitoring**: Health checks and logging
+
+#### 13.4.5. GitHub Actions Webhook Deployment
+
+**GitHub Workflows:**
+- **Webhook Deploy**: `.github/workflows/webhook-deploy.yml`
+- **Webhook Monitor**: `.github/workflows/webhook-monitor.yml`
+- **Docker Build**: `.github/workflows/docker-build.yml`
+- **Docker Deploy**: `.github/workflows/docker-deploy.yml`
+
+**Webhook Deployment Workflow:**
+```yaml
+# .github/workflows/webhook-deploy.yml
+name: Webhook Deployment
+
+on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'webhook-handler.js'
+      - 'webhook-package.json'
+      - 'Dockerfile.webhook'
+      - 'docker-compose.webhook.yml'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+          - development
+```
+
+**Webhook Monitoring Workflow:**
+```yaml
+# .github/workflows/webhook-monitor.yml
+name: Webhook Monitoring
+
+on:
+  schedule:
+    # Run every 5 minutes to monitor webhook health
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'health'
+        type: choice
+        options:
+          - health
+          - webhook
+          - full
+```
+
+**GitHub Secrets Configuration:**
+```env
+# Required GitHub Secrets
+DOCKER_USERNAME=your-docker-username
+DOCKER_PASSWORD=your-docker-password
+RENDER_API_KEY=your-render-api-key
+WEBHOOK_SECRET=your-webhook-secret
+```
+
+**Automated Deployment Pipeline:**
+1. **Code Push** → GitHub repository updated
+2. **GitHub Actions** → Triggers webhook deployment workflow
+3. **Docker Build** → Builds webhook Docker image
+4. **Docker Push** → Pushes to Docker Hub
+5. **Render Deploy** → Deploys to Render service
+6. **Health Check** → Verifies deployment success
+7. **Monitoring** → Continuous health monitoring
+
+#### 13.4.6. Current Deployment Status
+
+**Live Services:**
+- **Main Website**: https://jamstockanalytics-oss.github.io/JamstockAnalyticsWebOnly/
+- **Webhook Service**: https://jamstockanalytics-webhook.onrender.com
+- **Health Check**: https://jamstockanalytics-webhook.onrender.com/health
+
+**Deployment Pipeline Status:**
+```
+✅ GitHub Repository: jamstockanalytics-oss/JamstockAnalyticsWebOnly
+✅ Docker Hub Integration: jamstockanalytics/jamstockanalytics
+✅ Render Webhook Service: jamstockanalytics-webhook.onrender.com
+✅ Automated Deployments: Active
+✅ Error Handling: Enhanced with signature verification
+✅ GitHub Actions: Webhook deployment workflows configured
+✅ Monitoring: Automated health checks every 5 minutes
+```
+
+#### 13.4.7. GitHub Actions Workflow Details
+
+**Webhook Deployment Workflow Features:**
+- **Triggered by**: Push to master/main branches, webhook file changes
+- **Manual Dispatch**: Environment selection (production/staging/development)
+- **Multi-platform**: Linux AMD64 and ARM64 support
+- **Caching**: GitHub Actions cache for faster builds
+- **Security**: Docker Hub authentication with secrets
+- **Testing**: Automated health checks after deployment
+- **Notifications**: Deployment status reporting
+
+**Webhook Monitoring Workflow Features:**
+- **Scheduled**: Every 5 minutes automatic health checks
+- **Manual Testing**: Health, webhook, and full test options
+- **Performance**: Response time and concurrent request testing
+- **Alerting**: Failure notifications with service URLs
+- **Reporting**: Detailed monitoring reports in GitHub Actions
+
+**GitHub Repository Structure:**
+```
+.github/
+├── workflows/
+│   ├── webhook-deploy.yml      # Webhook deployment workflow
+│   ├── webhook-monitor.yml     # Webhook monitoring workflow
+│   ├── docker-build.yml       # Docker image building
+│   ├── docker-deploy.yml       # Docker deployment
+│   └── ci.yml                 # Continuous integration
+```
+
+**Required GitHub Secrets:**
+```bash
+# Docker Hub credentials
+DOCKER_USERNAME=your-docker-username
+DOCKER_PASSWORD=your-docker-password
+
+# Render.com API access
+RENDER_API_KEY=your-render-api-key
+
+# Webhook security
+WEBHOOK_SECRET=your-webhook-secret
+
+# Optional: Additional service credentials
+SUPABASE_URL=your-supabase-url
+SUPABASE_ANON_KEY=your-supabase-anon-key
+DEEPSEEK_API_KEY=your-deepseek-api-key
+```
+
+**Workflow Execution Examples:**
+```bash
+# Manual webhook deployment
+gh workflow run webhook-deploy.yml -f environment=production
+
+# Manual webhook monitoring
+gh workflow run webhook-monitor.yml -f test_type=full -f environment=production
+
+# Check workflow status
+gh run list --workflow=webhook-deploy.yml
+gh run list --workflow=webhook-monitor.yml
+```
+
+**Environment Variables:**
+```env
+# Webhook Configuration
+WEBHOOK_PORT=3000
+WEBHOOK_SECRET=your-webhook-secret
+DOCKER_IMAGE=jamstockanalytics/jamstockanalytics
+
+# Render Service Settings
+RENDER_SERVICE_NAME=jamstockanalytics-webhook
+RENDER_PLAN=free
+RENDER_ENVIRONMENT=node
+```
+
+**Monitoring Commands:**
+```bash
+# Check webhook health
+curl https://jamstockanalytics-webhook.onrender.com/health
+
+# Test webhook endpoint (POST only)
+curl -X POST https://jamstockanalytics-webhook.onrender.com/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=your-signature" \
+  -d '{"test": "webhook"}'
+
+# Monitor deployment logs
+# Go to: https://dashboard.render.com
+# Select: jamstockanalytics-webhook service
+# View: Logs tab
 ```
 
 **Updated Docker Deployment Commands:**

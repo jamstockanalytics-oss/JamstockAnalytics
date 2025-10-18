@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: jamstockanalytics-app
+    env: node
+    plan: free
+    buildCommand: cd JamStockAnalytics && npm install && npm run build:web:optimized
+    startCommand: cd JamStockAnalytics && npx serve web-build -p $PORT
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        value: YOUR_SUPABASE_URL_HERE
+      - key: EXPO_PUBLIC_SUPABASE_ANON_KEY
+        value: YOUR_SUPABASE_ANON_KEY_HERE
+      - key: EXPO_PUBLIC_DEEPSEEK_API_KEY
+        value: YOUR_DEEPSEEK_API_KEY_HERE
