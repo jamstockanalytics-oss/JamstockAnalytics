@@ -3409,7 +3409,274 @@ echo "✅ Workflow status check complete"
 - **Contributing Guidelines:** [Link to contributing guide]
 - **Troubleshooting Guide:** This document
 
-### 17.8. Success Metrics
+### 17.8. GitHub Environment Setup
+
+#### Development Environment Setup
+
+**Repository Configuration:**
+```bash
+# Clone repository for development
+git clone https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly.git
+cd JamstockAnalyticsWebOnly
+
+# Create development branch
+git checkout -b develop
+git push -u origin develop
+
+# Set up development environment
+npm install
+npm run dev
+```
+
+**Development GitHub Actions Workflow:**
+```yaml
+# .github/workflows/development.yml
+name: Development Environment
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  development-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build for development
+        run: npm run build:dev
+      
+      - name: Deploy to development
+        run: |
+          docker build -t jamstockanalytics:dev .
+          docker run -d --name jamstock-dev -p 8081:80 jamstockanalytics:dev
+```
+
+**Development Environment Variables:**
+```bash
+# Development secrets in GitHub repository settings
+DOCKER_USERNAME=your-docker-username
+DOCKER_PASSWORD=your-docker-password
+SUPABASE_URL=your-dev-supabase-url
+SUPABASE_ANON_KEY=your-dev-supabase-key
+NODE_ENV=development
+```
+
+#### Production Environment Setup
+
+**Repository Configuration:**
+```bash
+# Create production branch
+git checkout -b production
+git push -u origin production
+
+# Set up production environment
+npm run build:prod
+```
+
+**Production GitHub Actions Workflow:**
+```yaml
+# .github/workflows/production.yml
+name: Production Environment
+
+on:
+  push:
+    branches: [ main, production ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+        - staging
+        - production
+
+jobs:
+  production-deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push production image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: |
+            jamstockanalytics:latest
+            jamstockanalytics:${{ github.sha }}
+            jamstockanalytics:production
+      
+      - name: Deploy to production
+        run: |
+          docker-compose -f docker-compose.prod.yml up -d
+          docker system prune -f
+```
+
+**Production Environment Variables:**
+```bash
+# Production secrets in GitHub repository settings
+DOCKER_USERNAME=your-docker-username
+DOCKER_PASSWORD=your-docker-password
+SUPABASE_URL=your-prod-supabase-url
+SUPABASE_ANON_KEY=your-prod-supabase-key
+NODE_ENV=production
+```
+
+#### Environment-Specific Docker Compose Files
+
+**Development Docker Compose:**
+```yaml
+# docker-compose.dev.yml
+services:
+  jamstockanalytics:
+    build: .
+    ports:
+      - "8081:80"
+    volumes:
+      - ./static:/usr/share/nginx/html/static:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
+    environment:
+      - NODE_ENV=development
+      - NGINX_PORT=80
+    restart: unless-stopped
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge
+```
+
+**Production Docker Compose:**
+```yaml
+# docker-compose.prod.yml
+services:
+  jamstockanalytics:
+    build: .
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+      - NGINX_PORT=80
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+    networks:
+      - prod-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.jamstockanalytics.rule=Host(`your-domain.com`)"
+
+networks:
+  prod-network:
+    driver: bridge
+```
+
+#### GitHub Environment Protection Rules
+
+**Development Environment:**
+- **Required reviewers**: 1
+- **Required status checks**: Development tests
+- **Restrict pushes**: Only from develop branch
+- **Allow deletions**: No
+
+**Production Environment:**
+- **Required reviewers**: 2
+- **Required status checks**: All tests, security scans
+- **Restrict pushes**: Only from main branch
+- **Allow deletions**: No
+- **Environment secrets**: Production-specific secrets
+
+#### Environment-Specific Deployment Commands
+
+**Development Deployment:**
+```bash
+# Deploy to development
+docker-compose -f docker-compose.dev.yml up -d
+
+# Check development status
+docker ps --filter "name=jamstockanalytics"
+curl http://localhost:8081
+
+# View development logs
+docker-compose -f docker-compose.dev.yml logs -f
+```
+
+**Production Deployment:**
+```bash
+# Deploy to production
+docker-compose -f docker-compose.prod.yml up -d
+
+# Check production status
+docker ps --filter "name=jamstockanalytics"
+curl http://localhost:80
+
+# View production logs
+docker-compose -f docker-compose.prod.yml logs -f
+```
+
+#### Environment Monitoring
+
+**Development Monitoring:**
+```bash
+# Health check development
+curl -f http://localhost:8081/health || exit 1
+
+# Resource usage
+docker stats jamstockanalytics --no-stream
+
+# Log monitoring
+docker logs jamstockanalytics --tail=100
+```
+
+**Production Monitoring:**
+```bash
+# Health check production
+curl -f http://localhost:80/health || exit 1
+
+# Resource usage
+docker stats jamstockanalytics --no-stream
+
+# Log monitoring
+docker logs jamstockanalytics --tail=100
+
+# Performance monitoring
+docker exec jamstockanalytics nginx -T
+```
+
+### 17.9. Success Metrics
 
 #### Repository Health
 - ✅ No GitHub errors
@@ -3431,4 +3698,4 @@ echo "✅ Workflow status check complete"
 
 ---
 
-*This document serves as the comprehensive specification for the JamStockAnalyticsAI application, covering all aspects from initial setup to advanced features and deployment, including comprehensive GitHub error resolution documentation.*
+*This document serves as the comprehensive specification for the JamStockAnalyticsAI application, covering all aspects from initial setup to advanced features and deployment, including comprehensive GitHub error resolution documentation and environment setup.*

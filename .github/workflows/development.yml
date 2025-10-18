@@ -1,0 +1,36 @@
+name: Development Environment
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  development-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run tests
+        run: npm test
+      
+      - name: Build for development
+        run: npm run build:dev
+      
+      - name: Deploy to development
+        run: |
+          docker build -t jamstockanalytics:dev .
+          docker run -d --name jamstock-dev -p 8081:80 jamstockanalytics:dev
+          echo "🚀 Development deployment completed!"
+          echo "🔧 Development site: http://localhost:8081"
