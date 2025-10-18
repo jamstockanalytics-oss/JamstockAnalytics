@@ -14,12 +14,6 @@ WORKDIR /app
 
 # Copy webhook handler
 COPY webhook-handler.js ./
-COPY deploy-on-webhook.sh ./
-COPY deploy-on-webhook.ps1 ./
-COPY docker-compose.prod.yml ./
-
-# Make scripts executable
-RUN chmod +x deploy-on-webhook.sh
 
 # Create non-root user
 RUN addgroup -g 1001 -S webhook && \
