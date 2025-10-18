@@ -61,8 +61,8 @@ catch {
 
 # Display configuration information
 Write-Host "`n📋 Configuration Summary:" -ForegroundColor Cyan
-Write-Host "Production Webhook URL: http://66.234.84.10:3000/webhook" -ForegroundColor White
-Write-Host "Production Health Check: http://66.234.84.10:3000/health" -ForegroundColor White
+Write-Host "Railway Webhook URL: https://your-app.railway.app/webhook" -ForegroundColor White
+Write-Host "Railway Health Check: https://your-app.railway.app/health" -ForegroundColor White
 Write-Host "Local Webhook URL: http://localhost:3000/webhook" -ForegroundColor White
 Write-Host "Local Health Check: http://localhost:3000/health" -ForegroundColor White
 Write-Host "Webhook Secret: $WebhookSecret" -ForegroundColor White
@@ -71,7 +71,7 @@ Write-Host "Docker Hub Repository: $DockerHubUsername/$DockerHubRepository" -For
 Write-Host "`n🔧 Next Steps:" -ForegroundColor Cyan
 Write-Host "1. Configure Docker Hub webhook:" -ForegroundColor White
 Write-Host "   - Go to https://hub.docker.com/repository/docker/$DockerHubUsername/$DockerHubRepository/webhooks" -ForegroundColor Gray
-Write-Host "   - Add webhook URL: http://66.234.84.10:3000/webhook" -ForegroundColor Gray
+Write-Host "   - Add webhook URL: https://your-app.railway.app/webhook" -ForegroundColor Gray
 Write-Host "   - Set webhook secret: $WebhookSecret" -ForegroundColor Gray
 Write-Host "   - Select events: Push to repository" -ForegroundColor Gray
 
@@ -81,7 +81,7 @@ Write-Host "   - Check webhook logs: docker logs jamstockanalytics-webhook" -For
 
 Write-Host "`n3. Monitor deployment:" -ForegroundColor White
 Write-Host "   - Check container status: docker ps" -ForegroundColor Gray
-Write-Host "   - View application: http://66.234.84.10/" -ForegroundColor Gray
-Write-Host "   - Test webhook health: http://66.234.84.10:3000/health" -ForegroundColor Gray
+Write-Host "   - View application: https://your-app.railway.app/" -ForegroundColor Gray
+Write-Host "   - Test webhook health: https://your-app.railway.app/health" -ForegroundColor Gray
 
 Write-Host "`n✅ Webhook integration setup complete!" -ForegroundColor Green

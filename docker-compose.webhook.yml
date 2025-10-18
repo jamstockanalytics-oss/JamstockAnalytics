@@ -13,8 +13,8 @@ services:
       - WEBHOOK_PORT=3000
       - WEBHOOK_SECRET=${WEBHOOK_SECRET:-your-webhook-secret}
       - NODE_ENV=production
-      - PRODUCTION_SERVER_IP=66.234.84.10
-      - PRODUCTION_WEBHOOK_URL=http://66.234.84.10:3000/webhook
+      - PRODUCTION_SERVER_IP=railway.app
+      - PRODUCTION_WEBHOOK_URL=https://your-app.railway.app/webhook
     volumes:
       # Mount Docker socket for deployment operations
       - /var/run/docker.sock:/var/run/docker.sock
