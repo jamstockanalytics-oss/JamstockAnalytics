@@ -1,14 +1,46 @@
-version: '3.8'
-
 services:
   jamstockanalytics:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jamstockanalytics-web
+    restart: unless-stopped
     ports:
       - "8081:80"
     volumes:
+      # Static assets with read-only access
       - ./static:/usr/share/nginx/html/static:ro
       - ./index.html:/usr/share/nginx/html/index.html:ro
       - ./web-config.html:/usr/share/nginx/html/web-config.html:ro
       - ./web-preview.html:/usr/share/nginx/html/web-preview.html:ro
       - ./logo.png:/usr/share/nginx/html/logo.png:ro
       - ./favicon.ico:/usr/share/nginx/html/favicon.ico:ro
+      # nginx logs for debugging
+      - nginx-logs:/var/log/nginx
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - jamstockanalytics-network
+    labels:
+      - "com.jamstockanalytics.service=web"
+      - "com.jamstockanalytics.version=1.0.0"
+      - "traefik.enable=true"
+      - "traefik.http.routers.jamstockanalytics.rule=Host(`localhost`)"
+      - "traefik.http.services.jamstockanalytics.loadbalancer.server.port=80"
+
+volumes:
+  nginx-logs:
+    driver: local
+
+networks:
+  jamstockanalytics-network:
+    driver: bridge
+    name: jamstockanalytics-network
