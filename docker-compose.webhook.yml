@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  webhook-handler:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: jamstockanalytics-webhook
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - WEBHOOK_PORT=3000
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-your-webhook-secret}
+      - NODE_ENV=production
+      - PRODUCTION_SERVER_IP=66.234.84.10
+      - PRODUCTION_WEBHOOK_URL=http://66.234.84.10:3000/webhook
+    volumes:
+      # Mount Docker socket for deployment operations
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount deployment scripts
+      - ./scripts:/app/scripts:ro
+      # Mount docker-compose files
+      - ./docker-compose.prod.yml:/app/docker-compose.prod.yml:ro
+    networks:
+      - webhook-network
+    labels:
+      - "com.jamstockanalytics.service=webhook"
+      - "com.jamstockanalytics.version=1.0.0"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  webhook-network:
+    driver: bridge
+    name: jamstockanalytics-webhook-network
