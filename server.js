@@ -482,8 +482,15 @@ function startBackgroundJobs() {
 async function startServer() {
   await initializeServices();
   
-  server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  // Configure server timeouts for Render.com
+  server.keepAliveTimeout = 120000; // 2 minutes
+  server.headersTimeout = 120000;   // 2 minutes
+  
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🌍 Host: 0.0.0.0`);
+    console.log(`🔗 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`📊 Database: ${process.env.MONGODB_URI ? 'Connected' : 'Not configured'}`);
   });
 }
 

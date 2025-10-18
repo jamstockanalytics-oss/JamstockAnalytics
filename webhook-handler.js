@@ -397,8 +397,9 @@ app.use((req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`✅ Webhook handler running on port ${PORT}`);
+  console.log(`🌍 Host: 0.0.0.0`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
   console.log(`🎯 Webhook endpoint: http://localhost:${PORT}/webhook`);
   console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
@@ -407,6 +408,10 @@ app.listen(PORT, () => {
   console.error('❌ Failed to start webhook handler:', err);
   process.exit(1);
 });
+
+// Configure server timeouts for Render.com
+server.keepAliveTimeout = 120000; // 2 minutes
+server.headersTimeout = 120000;   // 2 minutes
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
