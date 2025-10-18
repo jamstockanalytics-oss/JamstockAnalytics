@@ -325,47 +325,80 @@ async function initializeServices() {
   try {
     console.log('🔄 Initializing services...');
     
-    // Connect to database first
-    await DatabaseService.connect();
-    console.log('✅ Database connected successfully');
+    // Try to connect to database, but don't fail if not available
+    try {
+      await DatabaseService.connect();
+      console.log('✅ Database connected successfully');
+    } catch (dbError) {
+      console.warn('⚠️ Database connection failed, continuing without database:', dbError.message);
+      console.log('💡 You can add a database later by configuring MONGODB_URI');
+    }
     
-    // Initialize services
-    await MarketDataService.initialize();
-    console.log('✅ Market Data Service initialized');
+    // Initialize services (these should work without database)
+    try {
+      await MarketDataService.initialize();
+      console.log('✅ Market Data Service initialized');
+    } catch (error) {
+      console.warn('⚠️ Market Data Service initialization failed:', error.message);
+    }
     
-    await AIService.initialize();
-    console.log('✅ AI Service initialized');
+    try {
+      await AIService.initialize();
+      console.log('✅ AI Service initialized');
+    } catch (error) {
+      console.warn('⚠️ AI Service initialization failed:', error.message);
+    }
     
-    await NewsService.initialize();
-    console.log('✅ News Service initialized');
+    try {
+      await NewsService.initialize();
+      console.log('✅ News Service initialized');
+    } catch (error) {
+      console.warn('⚠️ News Service initialization failed:', error.message);
+    }
     
     // Initialize real-time service
-    const realtimeService = new RealtimeService(io);
-    app.locals.realtimeService = realtimeService;
-    console.log('✅ Real-time Service initialized');
+    try {
+      const realtimeService = new RealtimeService(io);
+      app.locals.realtimeService = realtimeService;
+      console.log('✅ Real-time Service initialized');
+    } catch (error) {
+      console.warn('⚠️ Real-time Service initialization failed:', error.message);
+    }
     
     // Initialize sentiment analysis service
-    const sentimentService = new SentimentAnalysisService();
-    app.locals.sentimentService = sentimentService;
-    setupSentimentEventHandlers(sentimentService, io);
-    console.log('✅ Sentiment Analysis Service initialized');
+    try {
+      const sentimentService = new SentimentAnalysisService();
+      app.locals.sentimentService = sentimentService;
+      setupSentimentEventHandlers(sentimentService, io);
+      console.log('✅ Sentiment Analysis Service initialized');
+    } catch (error) {
+      console.warn('⚠️ Sentiment Analysis Service initialization failed:', error.message);
+    }
     
     // Initialize Hugging Face service
-    const huggingFaceService = new HuggingFaceService();
-    app.locals.huggingFaceService = huggingFaceService;
-    setupHuggingFaceEventHandlers(huggingFaceService, io);
-    console.log('✅ Hugging Face Service initialized');
+    try {
+      const huggingFaceService = new HuggingFaceService();
+      app.locals.huggingFaceService = huggingFaceService;
+      setupHuggingFaceEventHandlers(huggingFaceService, io);
+      console.log('✅ Hugging Face Service initialized');
+    } catch (error) {
+      console.warn('⚠️ Hugging Face Service initialization failed:', error.message);
+    }
     
     // Start background jobs
-    startBackgroundJobs();
-    console.log('✅ Background jobs started');
+    try {
+      startBackgroundJobs();
+      console.log('✅ Background jobs started');
+    } catch (error) {
+      console.warn('⚠️ Background jobs failed to start:', error.message);
+    }
     
-    console.log('🎉 All services initialized successfully!');
+    console.log('🎉 Server initialization completed!');
+    console.log('💡 Some services may be limited without database connection');
     
   } catch (error) {
     console.error('❌ Failed to initialize services:', error);
-    console.error('💡 Check your database connection and environment variables');
-    process.exit(1);
+    console.log('⚠️ Continuing server startup despite initialization errors');
   }
 }
 
