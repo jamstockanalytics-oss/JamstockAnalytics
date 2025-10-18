@@ -2,7 +2,7 @@ const axios = require('axios');
 
 class NewsService {
   static async initialize() {
-    console.log('✅ News service initialized');
+    // News service initialized
   }
 
   static async fetchLatestNews() {

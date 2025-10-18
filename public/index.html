@@ -4,6 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JamStockAnalytics - AI-Powered Jamaica Stock Exchange Analysis</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="application-name" content="JamStockAnalytics">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="JamStockAnalytics">
+    <meta name="description" content="AI-powered insights for Jamaica Stock Exchange market analysis">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-config" content="/browserconfig.xml">
+    <meta name="msapplication-TileColor" content="#667eea">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="theme-color" content="#667eea">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-16x16.png">
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png">
+    
+    <!-- Styles -->
     <link rel="stylesheet" href="/static/css/main.css">
     <link rel="icon" href="/favicon.ico">
 </head>
@@ -21,6 +47,14 @@
                     <a href="/analysis">Analysis</a>
                     <a href="/portfolio">Portfolio</a>
                     <a href="/login">Login</a>
+                    <button id="install-button" class="install-btn" style="display: none;">
+                        📱 Install App
+                    </button>
+                </div>
+                <div class="mobile-menu-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
                 </div>
             </nav>
         </header>
@@ -55,6 +89,154 @@
                     </div>
                 </div>
             </section>
+            
+            <!-- Real-time Market Data -->
+            <section class="realtime-section">
+                <h2>Live Market Data</h2>
+                <div class="market-ticker">
+                    <div class="ticker-item">
+                        <span class="symbol">JSE</span>
+                        <span class="price" data-symbol="JSE" data-field="price">$25.50</span>
+                        <span class="change" data-symbol="JSE" data-field="change">+0.25</span>
+                    </div>
+                    <div class="ticker-item">
+                        <span class="symbol">NCBFG</span>
+                        <span class="price" data-symbol="NCBFG" data-field="price">$45.75</span>
+                        <span class="change" data-symbol="NCBFG" data-field="change">-0.50</span>
+                    </div>
+                    <div class="ticker-item">
+                        <span class="symbol">SJ</span>
+                        <span class="price" data-symbol="SJ" data-field="price">$12.30</span>
+                        <span class="change" data-symbol="SJ" data-field="change">+0.15</span>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Real-time News Feed -->
+            <section class="realtime-section">
+                <h2>Latest News</h2>
+                <div id="news-feed" class="news-feed">
+                    <div class="news-item">
+                        <h4>JSE Market Shows Strong Performance</h4>
+                        <p>The Jamaica Stock Exchange continues to show strong performance with key indices up.</p>
+                        <small>Just now</small>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- AI Insights -->
+            <section class="realtime-section">
+                <h2>AI Insights</h2>
+                <div id="ai-insights" class="ai-insights">
+                    <div class="ai-insight">
+                        <h4>Market Trend Analysis</h4>
+                        <p>Based on current market data, we predict a bullish trend for the next quarter.</p>
+                        <div class="confidence">Confidence: 85.0%</div>
+                        <small>2 minutes ago</small>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Sentiment Analysis -->
+            <section class="sentiment-section">
+                <h2>Market Sentiment Analysis</h2>
+                <div class="sentiment-overview">
+                    <div class="sentiment-card overall">
+                        <h3>Overall Sentiment</h3>
+                        <div class="sentiment-value" id="overall-sentiment">Loading...</div>
+                        <div class="sentiment-score" id="overall-sentiment-score">-</div>
+                        <div class="sentiment-confidence">Confidence: <span id="overall-sentiment-confidence">-</span></div>
+                        <div class="sentiment-recommendation">Recommendation: <span id="overall-sentiment-recommendation">-</span></div>
+                    </div>
+                    
+                    <div class="sentiment-card news">
+                        <h3>News Sentiment</h3>
+                        <div class="sentiment-value" id="news-sentiment">Loading...</div>
+                        <div class="sentiment-score" id="news-sentiment-score">-</div>
+                    </div>
+                    
+                    <div class="sentiment-card market">
+                        <h3>Market Sentiment</h3>
+                        <div class="sentiment-value" id="market-sentiment">Loading...</div>
+                        <div class="sentiment-score" id="market-sentiment-score">-</div>
+                    </div>
+                    
+                    <div class="sentiment-card social">
+                        <h3>Social Sentiment</h3>
+                        <div class="sentiment-value" id="social-sentiment">Loading...</div>
+                        <div class="sentiment-score" id="social-sentiment-score">-</div>
+                    </div>
+                </div>
+                
+                <div class="sentiment-history">
+                    <h3>Sentiment History</h3>
+                    <div id="sentiment-history-chart" class="sentiment-chart"></div>
+                </div>
+                
+                <div class="sentiment-analysis">
+                    <h3>Custom Text Analysis</h3>
+                    <textarea id="custom-text-input" placeholder="Enter text to analyze sentiment..."></textarea>
+                    <button id="analyze-text-btn">Analyze Sentiment</button>
+                    <div id="custom-sentiment-result" class="sentiment-result"></div>
+                </div>
+            </section>
+            
+            <!-- Hugging Face AI Analysis -->
+            <section class="huggingface-section">
+                <h2>Hugging Face AI Analysis</h2>
+                <div class="service-status">
+                    <h3>Service Status</h3>
+                    <div class="status-indicator">
+                        <span id="huggingface-status" class="status-disconnected">Checking...</span>
+                    </div>
+                </div>
+                
+                <div class="analysis-tools">
+                    <div class="tool-card sentiment">
+                        <h3>Sentiment Analysis</h3>
+                        <div class="result" id="huggingface-sentiment">-</div>
+                        <div class="confidence">Confidence: <span id="huggingface-sentiment-confidence">-</span></div>
+                    </div>
+                    
+                    <div class="tool-card emotion">
+                        <h3>Emotion Analysis</h3>
+                        <div class="result" id="huggingface-emotion">-</div>
+                        <div class="confidence">Confidence: <span id="huggingface-emotion-confidence">-</span></div>
+                    </div>
+                    
+                    <div class="tool-card financial">
+                        <h3>Financial Sentiment</h3>
+                        <div class="result" id="huggingface-financial-sentiment">-</div>
+                        <div class="confidence">Confidence: <span id="huggingface-financial-confidence">-</span></div>
+                    </div>
+                    
+                    <div class="tool-card classification">
+                        <h3>Text Classification</h3>
+                        <div class="result" id="huggingface-classification">-</div>
+                        <div class="confidence">Confidence: <span id="huggingface-classification-confidence">-</span></div>
+                    </div>
+                </div>
+                
+                <div class="huggingface-interface">
+                    <h3>AI Analysis Interface</h3>
+                    
+                    <div class="input-section">
+                        <textarea id="huggingface-text-input" placeholder="Enter text to analyze..."></textarea>
+                        <div class="button-group">
+                            <button id="analyze-sentiment-btn">Analyze Sentiment</button>
+                            <button id="analyze-emotion-btn">Analyze Emotion</button>
+                            <button id="analyze-financial-btn">Financial Sentiment</button>
+                            <button id="classify-text-btn">Classify Text</button>
+                            <button id="summarize-text-btn">Summarize</button>
+                            <button id="generate-text-btn">Generate Text</button>
+                        </div>
+                    </div>
+                    
+                    <div class="results-section">
+                        <div id="huggingface-results" class="results-container"></div>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <footer>
@@ -64,7 +246,149 @@
 
     <script src="/static/js/main.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/static/js/realtime.js"></script>
+    <script src="/static/js/sentiment.js"></script>
+    <script src="/static/js/huggingFace.js"></script>
     <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', () => {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', () => {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New content is available, show update notification
+                                    showUpdateNotification();
+                                }
+                            });
+                        });
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        const installButton = document.getElementById('install-button');
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('PWA install prompt triggered');
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button
+            if (installButton) {
+                installButton.style.display = 'block';
+                installButton.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('User accepted the install prompt');
+                        } else {
+                            console.log('User dismissed the install prompt');
+                        }
+                        deferredPrompt = null;
+                    });
+                });
+            }
+        });
+        
+        // PWA Install Success
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA was installed');
+            if (installButton) {
+                installButton.style.display = 'none';
+            }
+        });
+        
+        // PWA Update Notification
+        function showUpdateNotification() {
+            if (confirm('A new version of JamStockAnalytics is available. Would you like to update?')) {
+                window.location.reload();
+            }
+        }
+        
+        // PWA Online/Offline Detection
+        function updateOnlineStatus() {
+            const status = navigator.onLine ? 'online' : 'offline';
+            console.log('Connection status:', status);
+            
+            // Update UI based on connection status
+            document.body.classList.toggle('offline', !navigator.onLine);
+            
+            if (navigator.onLine) {
+                // Connection restored, sync data
+                syncOfflineData();
+            }
+        }
+        
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        
+        // Initialize connection status
+        updateOnlineStatus();
+        
+        // Sync offline data when connection is restored
+        function syncOfflineData() {
+            console.log('Syncing offline data...');
+            // Implement your offline data sync logic here
+            // For example, sync portfolio changes, market data updates, etc.
+        }
+        
+        // PWA Background Sync
+        if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+            // Register background sync for offline actions
+            navigator.serviceWorker.ready.then(registration => {
+                return registration.sync.register('background-sync');
+            });
+        }
+        
+        // PWA Push Notifications
+        function requestNotificationPermission() {
+            if ('Notification' in window && 'serviceWorker' in navigator) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted');
+                        // Subscribe to push notifications
+                        subscribeToPush();
+                    } else {
+                        console.log('Notification permission denied');
+                    }
+                });
+            }
+        }
+        
+        function subscribeToPush() {
+            navigator.serviceWorker.ready.then(registration => {
+                return registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: 'YOUR_VAPID_PUBLIC_KEY' // Replace with your VAPID key
+                });
+            }).then(subscription => {
+                console.log('Push subscription:', subscription);
+                // Send subscription to server
+                sendSubscriptionToServer(subscription);
+            });
+        }
+        
+        function sendSubscriptionToServer(subscription) {
+            // Send subscription to your server
+            fetch('/api/push/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(subscription)
+            });
+        }
+        
         // Initialize Socket.IO connection
         const socket = io();
         
@@ -83,6 +407,38 @@
             console.log('AI analysis received:', data);
             // Update UI with AI analysis
         });
+        
+        // PWA Lifecycle Events
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('App hidden');
+            } else {
+                console.log('App visible');
+                // Refresh data when app becomes visible
+                if (navigator.onLine) {
+                    syncOfflineData();
+                }
+            }
+        });
+        
+        // PWA Share API
+        if ('share' in navigator) {
+            // Add share functionality
+            const shareButton = document.getElementById('share-button');
+            if (shareButton) {
+                shareButton.addEventListener('click', async () => {
+                    try {
+                        await navigator.share({
+                            title: 'JamStockAnalytics',
+                            text: 'Check out this AI-powered JSE market analysis app!',
+                            url: window.location.href
+                        });
+                    } catch (err) {
+                        console.log('Error sharing:', err);
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html>

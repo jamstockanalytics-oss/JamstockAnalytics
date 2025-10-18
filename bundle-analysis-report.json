@@ -1,0 +1,25 @@
+{
+  "timestamp": "2025-10-18T16:45:08.271Z",
+  "files": [
+    {
+      "path": "css\\main.css",
+      "size": 9350,
+      "sizeKB": 9,
+      "type": "stylesheet"
+    },
+    {
+      "path": "js\\main.js",
+      "size": 6810,
+      "sizeKB": 7,
+      "type": "script"
+    },
+    {
+      "path": "index.html",
+      "size": 3592,
+      "sizeKB": 4,
+      "type": "document"
+    }
+  ],
+  "totalSize": 19752,
+  "recommendations": []
+}

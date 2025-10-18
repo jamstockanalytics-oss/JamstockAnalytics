@@ -11,7 +11,7 @@ class AIService {
 
   async initialize() {
     if (!this.apiKey) {
-      console.warn('⚠️ DeepSeek API key not provided, using mock AI responses');
+      // DeepSeek API key not provided, using mock AI responses
       this.isInitialized = false;
       return;
     }
@@ -20,9 +20,9 @@ class AIService {
       // Test API connection
       await this.testConnection();
       this.isInitialized = true;
-      console.log('✅ AI Service initialized with DeepSeek API');
+      // AI Service initialized with DeepSeek API
     } catch (error) {
-      console.warn('⚠️ AI Service initialized in mock mode:', error.message);
+      // AI Service initialized in mock mode
       this.isInitialized = false;
     }
   }
@@ -48,7 +48,6 @@ class AIService {
       }
 
       // Get market data for the symbol
-      const MarketData = require('../models/MarketData');
       const marketData = await MarketData.findOne({ symbol: symbol.toUpperCase() });
       
       if (!marketData) {

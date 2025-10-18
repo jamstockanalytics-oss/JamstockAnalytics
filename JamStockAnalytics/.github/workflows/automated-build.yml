@@ -58,7 +58,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -69,7 +68,7 @@ jobs:
         echo "🔍 Validating required secrets..."
         
         # Core required secrets
-        local core_secrets_valid=true
+        core_secrets_valid=true
         
         if [[ -z "${SUPABASE_URL:-}" ]]; then
           echo "❌ SUPABASE_URL secret is missing"
@@ -168,7 +167,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -204,7 +202,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -258,7 +255,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -312,7 +308,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci
@@ -347,7 +342,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
     
     - name: Install dependencies
       run: npm ci

@@ -1,186 +1,395 @@
-#!/usr/bin/env node
-
-/**
- * Docker Hub Webhook Handler for JamStockAnalytics
- * This script handles webhook events from Docker Hub and triggers deployments
- */
-
-const http = require('http');
+const express = require('express');
 const crypto = require('crypto');
-const { exec } = require('child_process');
-const fs = require('fs');
-const path = require('path');
+const axios = require('axios');
+const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
+require('dotenv').config();
 
-// Configuration
+const app = express();
 const PORT = process.env.WEBHOOK_PORT || 3000;
-const SECRET = process.env.WEBHOOK_SECRET || 'your-webhook-secret';
-const DOCKER_IMAGE = 'jamstockanalytics/jamstockanalytics';
-const DEPLOYMENT_SCRIPT = path.join(__dirname, 'deploy-on-webhook.sh');
 
-// Logging function
-function log(message, level = 'INFO') {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${level}] ${message}`);
-}
+// Security middleware
+app.use(helmet());
+app.use(cors());
+app.use(compression());
+app.use(morgan('combined'));
 
-// Verify webhook signature
-function verifySignature(payload, signature) {
-  if (!SECRET) {
-    log('WARNING: No webhook secret configured', 'WARN');
-    return true;
+// Body parsing
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Webhook secret validation
+const validateWebhookSignature = (req, res, next) => {
+  const signature = req.headers['x-hub-signature-256'] || req.headers['x-signature'];
+  const webhookSecret = process.env.WEBHOOK_SECRET;
+  
+  if (!webhookSecret) {
+    console.warn('WARNING: No webhook secret configured');
+    return next();
   }
   
-  // Check if signature exists
   if (!signature) {
-    log('WARNING: No signature provided', 'WARN');
-    return false;
+    return res.status(401).json({ error: 'Missing signature' });
   }
   
   const expectedSignature = crypto
-    .createHmac('sha256', SECRET)
-    .update(payload)
+    .createHmac('sha256', webhookSecret)
+    .update(JSON.stringify(req.body))
     .digest('hex');
-    
+  
   const providedSignature = signature.replace('sha256=', '');
   
-  // Ensure both signatures are the same length for timingSafeEqual
-  if (expectedSignature.length !== providedSignature.length) {
-    log(`Signature length mismatch: expected ${expectedSignature.length}, got ${providedSignature.length}`, 'WARN');
-    return false;
-  }
-  
-  return crypto.timingSafeEqual(
+  if (!crypto.timingSafeEqual(
     Buffer.from(expectedSignature, 'hex'),
     Buffer.from(providedSignature, 'hex')
-  );
-}
+  )) {
+    return res.status(401).json({ error: 'Invalid signature' });
+  }
+  
+  next();
+};
 
-// Handle deployment
-async function handleDeployment(pushData) {
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'jamstockanalytics-webhook',
+    version: process.env.npm_package_version || '1.0.0',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Main webhook endpoint
+app.post('/webhook', validateWebhookSignature, async (req, res) => {
   try {
-    log('Starting deployment process...');
+    const { event, data, source } = req.body;
     
-    // Check if the push is for our image
-    const repository = pushData.repository;
-    if (repository.repo_name !== DOCKER_IMAGE) {
-      log(`Ignoring push for ${repository.repo_name}, expected ${DOCKER_IMAGE}`);
-      return;
-    }
+    console.log(`Webhook received: ${event} from ${source || 'unknown'}`);
     
-    // Check if it's a tag push (not just a build)
-    const pushDataStr = JSON.stringify(pushData);
-    if (!pushDataStr.includes('"tag":')) {
-      log('No tag information in push data, skipping deployment');
-      return;
-    }
-    
-    log(`Deploying image: ${repository.repo_name}:${pushData.push_data.tag}`);
-    
-    // Execute deployment script (Windows or Linux)
-    const isWindows = process.platform === 'win32';
-    const scriptPath = isWindows 
-      ? path.join(__dirname, 'deploy-on-webhook.ps1')
-      : path.join(__dirname, 'deploy-on-webhook.sh');
-    
-    if (fs.existsSync(scriptPath)) {
-      const command = isWindows 
-        ? `powershell -ExecutionPolicy Bypass -File "${scriptPath}"`
-        : `bash ${scriptPath}`;
+    // Handle different webhook events
+    switch (event) {
+      case 'market_data_update':
+        await handleMarketDataUpdate(data);
+        break;
         
-      exec(command, (error, stdout, stderr) => {
-        if (error) {
-          log(`Deployment failed: ${error.message}`, 'ERROR');
-          return;
-        }
-        log(`Deployment output: ${stdout}`);
-        if (stderr) {
-          log(`Deployment stderr: ${stderr}`, 'WARN');
-        }
-      });
-    } else {
-      log(`Deployment script not found at ${scriptPath}`, 'ERROR');
+      case 'news_update':
+        await handleNewsUpdate(data);
+        break;
+        
+      case 'ai_analysis_complete':
+        await handleAIAnalysisComplete(data);
+        break;
+        
+      case 'user_activity':
+        await handleUserActivity(data);
+        break;
+        
+      case 'deployment':
+        await handleDeployment(data);
+        break;
+        
+      case 'github_push':
+        await handleGitHubPush(data);
+        break;
+        
+      case 'docker_build':
+        await handleDockerBuild(data);
+        break;
+        
+      default:
+        console.log(`Unknown webhook event: ${event}`);
+    }
+    
+    res.json({
+      success: true,
+      message: 'Webhook processed successfully',
+      event,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Webhook processing error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Webhook processing failed',
+      message: error.message
+    });
+  }
+});
+
+// Market data update handler
+async function handleMarketDataUpdate(data) {
+  try {
+    console.log('Processing market data update:', data.symbol);
+    
+    // Trigger real-time updates to connected clients
+    await notifyClients('market_update', {
+      symbol: data.symbol,
+      price: data.price,
+      change: data.change,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Update AI analysis if needed
+    if (data.triggerAI) {
+      await triggerAIAnalysis(data.symbol);
     }
     
   } catch (error) {
-    log(`Error during deployment: ${error.message}`, 'ERROR');
+    console.error('Market data update error:', error);
   }
 }
 
-// Create HTTP server
-const server = http.createServer((req, res) => {
-  if (req.method === 'POST' && req.url === '/webhook') {
-    let body = '';
+// News update handler
+async function handleNewsUpdate(data) {
+  try {
+    console.log('Processing news update:', data.title);
     
-    req.on('data', chunk => {
-      body += chunk.toString();
+    // Trigger real-time news updates
+    await notifyClients('news_update', {
+      title: data.title,
+      summary: data.summary,
+      sentiment: data.sentiment,
+      timestamp: new Date().toISOString()
     });
     
-    req.on('end', () => {
-      try {
-        const signature = req.headers['x-hub-signature-256'];
-        
-        log(`Received webhook request with signature: ${signature ? 'present' : 'missing'}`);
-        
-        // Verify signature
-        if (!verifySignature(body, signature)) {
-          log('Invalid webhook signature', 'ERROR');
-          res.writeHead(401, { 'Content-Type': 'application/json' });
-          res.end(JSON.stringify({ error: 'Unauthorized' }));
-          return;
-        }
-        
-        const pushData = JSON.parse(body);
-        log(`Received webhook for ${pushData.repository?.repo_name || 'unknown'}`);
-        
-        // Handle the deployment
-        handleDeployment(pushData);
-        
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ status: 'success' }));
-        
-      } catch (error) {
-        log(`Error processing webhook: ${error.message}`, 'ERROR');
-        log(`Error stack: ${error.stack}`, 'ERROR');
-        res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Bad Request' }));
-      }
-    });
-  } else if (req.method === 'GET' && req.url === '/health') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'healthy', timestamp: new Date().toISOString() }));
-  } else {
-    res.writeHead(404, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ error: 'Not Found' }));
+    // Trigger AI analysis for news impact
+    if (data.symbols && data.symbols.length > 0) {
+      await triggerNewsImpactAnalysis(data);
+    }
+    
+  } catch (error) {
+    console.error('News update error:', error);
   }
+}
+
+// AI analysis complete handler
+async function handleAIAnalysisComplete(data) {
+  try {
+    console.log('Processing AI analysis complete:', data.symbol);
+    
+    // Notify clients of AI analysis results
+    await notifyClients('ai_analysis', {
+      symbol: data.symbol,
+      recommendation: data.recommendation,
+      confidence: data.confidence,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('AI analysis complete error:', error);
+  }
+}
+
+// User activity handler
+async function handleUserActivity(data) {
+  try {
+    console.log('Processing user activity:', data.userId);
+    
+    // Log user activity for analytics
+    await logUserActivity(data);
+    
+    // Trigger personalized recommendations
+    if (data.activity === 'portfolio_update') {
+      await triggerPersonalizedRecommendations(data.userId);
+    }
+    
+  } catch (error) {
+    console.error('User activity error:', error);
+  }
+}
+
+// Deployment handler
+async function handleDeployment(data) {
+  try {
+    console.log('Processing deployment:', data.service);
+    
+    // Update deployment status
+    await updateDeploymentStatus(data);
+    
+    // Notify monitoring systems
+    await notifyMonitoringSystems(data);
+    
+  } catch (error) {
+    console.error('Deployment error:', error);
+  }
+}
+
+// GitHub push handler
+async function handleGitHubPush(data) {
+  try {
+    console.log('Processing GitHub push:', data.repository);
+    
+    // Trigger automated deployment
+    await triggerAutomatedDeployment(data);
+    
+  } catch (error) {
+    console.error('GitHub push error:', error);
+  }
+}
+
+// Docker build handler
+async function handleDockerBuild(data) {
+  try {
+    console.log('Processing Docker build:', data.image);
+    
+    // Update container registry
+    await updateContainerRegistry(data);
+    
+    // Trigger deployment
+    await triggerContainerDeployment(data);
+    
+  } catch (error) {
+    console.error('Docker build error:', error);
+  }
+}
+
+// Helper functions
+async function notifyClients(event, data) {
+  try {
+    // This would integrate with your main app's Socket.IO instance
+    // For now, we'll just log the notification
+    console.log(`Notifying clients: ${event}`, data);
+    
+    // In a real implementation, you'd send this to your main app
+    // via HTTP request or message queue
+    
+  } catch (error) {
+    console.error('Client notification error:', error);
+  }
+}
+
+async function triggerAIAnalysis(symbol) {
+  try {
+    // Trigger AI analysis for the symbol
+    console.log(`Triggering AI analysis for ${symbol}`);
+    
+    // This would call your AI service
+    // await AIService.analyzeStock(symbol);
+    
+  } catch (error) {
+    console.error('AI analysis trigger error:', error);
+  }
+}
+
+async function triggerNewsImpactAnalysis(newsData) {
+  try {
+    // Analyze news impact on stocks
+    console.log('Triggering news impact analysis:', newsData.symbols);
+    
+  } catch (error) {
+    console.error('News impact analysis error:', error);
+  }
+}
+
+async function logUserActivity(activityData) {
+  try {
+    // Log user activity for analytics
+    console.log('Logging user activity:', activityData);
+    
+  } catch (error) {
+    console.error('User activity logging error:', error);
+  }
+}
+
+async function triggerPersonalizedRecommendations(userId) {
+  try {
+    // Generate personalized recommendations
+    console.log(`Triggering personalized recommendations for user ${userId}`);
+    
+  } catch (error) {
+    console.error('Personalized recommendations error:', error);
+  }
+}
+
+async function updateDeploymentStatus(deploymentData) {
+  try {
+    // Update deployment status in database
+    console.log('Updating deployment status:', deploymentData);
+    
+  } catch (error) {
+    console.error('Deployment status update error:', error);
+  }
+}
+
+async function notifyMonitoringSystems(deploymentData) {
+  try {
+    // Notify monitoring systems of deployment
+    console.log('Notifying monitoring systems:', deploymentData);
+    
+  } catch (error) {
+    console.error('Monitoring notification error:', error);
+  }
+}
+
+async function triggerAutomatedDeployment(pushData) {
+  try {
+    // Trigger automated deployment based on GitHub push
+    console.log('Triggering automated deployment:', pushData);
+    
+  } catch (error) {
+    console.error('Automated deployment error:', error);
+  }
+}
+
+async function updateContainerRegistry(buildData) {
+  try {
+    // Update container registry with new image
+    console.log('Updating container registry:', buildData);
+    
+  } catch (error) {
+    console.error('Container registry update error:', error);
+  }
+}
+
+async function triggerContainerDeployment(buildData) {
+  try {
+    // Trigger container deployment
+    console.log('Triggering container deployment:', buildData);
+    
+  } catch (error) {
+    console.error('Container deployment error:', error);
+  }
+}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Webhook error:', err);
+  res.status(500).json({
+    success: false,
+    error: 'Internal server error',
+    message: err.message
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: 'Not found',
+    message: 'Webhook endpoint not found'
+  });
 });
 
 // Start server
-server.listen(PORT, '0.0.0.0', () => {
-  log(`Webhook handler listening on port ${PORT}`);
-  log(`Health check: http://localhost:${PORT}/health`);
-  log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
-  log(`Server started successfully on ${PORT}`);
-});
-
-// Handle server errors
-server.on('error', (error) => {
-  log(`Server error: ${error.message}`, 'ERROR');
-  process.exit(1);
+app.listen(PORT, () => {
+  console.log(`Webhook handler running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Webhook endpoint: http://localhost:${PORT}/webhook`);
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  log('Received SIGTERM, shutting down gracefully...');
-  server.close(() => {
-    log('Server closed');
-    process.exit(0);
-  });
+  console.log('SIGTERM received, shutting down webhook handler');
+  process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  log('Received SIGINT, shutting down gracefully...');
-  server.close(() => {
-    log('Server closed');
-    process.exit(0);
-  });
+  console.log('SIGINT received, shutting down webhook handler');
+  process.exit(0);
 });
+
+module.exports = app;

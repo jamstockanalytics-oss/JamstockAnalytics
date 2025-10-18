@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: jamstockanalytics-webhook
+    env: node
+    plan: free
+    buildCommand: echo "Dependencies will be installed automatically by Render"
+    startCommand: node webhook-handler.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEBHOOK_PORT
+        value: 3000
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: MAIN_APP_URL
+        value: https://jamstockanalytics-production.onrender.com
+      - key: CLIENT_URL
+        value: https://jamstockanalytics-oss.github.io
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: master
+    repo: https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly

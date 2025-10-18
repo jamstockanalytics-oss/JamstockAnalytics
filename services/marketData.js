@@ -2,7 +2,7 @@ const MarketData = require('../models/MarketData');
 
 class MarketDataService {
   static async initialize() {
-    console.log('✅ Market data service initialized');
+    // Market data service initialized
   }
 
   static async fetchLatestData() {

@@ -1,0 +1,6 @@
+[defaults]
+org=jam-stock-analytics
+project=node-b0
+
+[auth]
+token=your-sentry-auth-token-here

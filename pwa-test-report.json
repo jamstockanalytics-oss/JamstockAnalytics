@@ -1,0 +1,196 @@
+{
+  "timestamp": "2025-10-18T16:48:26.512Z",
+  "tests": [
+    {
+      "name": "manifest-name",
+      "passed": true,
+      "message": "Field name present",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-short_name",
+      "passed": true,
+      "message": "Field short_name present",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-start_url",
+      "passed": true,
+      "message": "Field start_url present",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-display",
+      "passed": true,
+      "message": "Field display present",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-icons",
+      "passed": true,
+      "message": "Field icons present",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-icons-array",
+      "passed": true,
+      "message": "Found 8 icons",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-icon-192x192",
+      "passed": true,
+      "message": "Icon 192x192 found",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-icon-512x512",
+      "passed": true,
+      "message": "Icon 512x512 found",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-display",
+      "passed": true,
+      "message": "Display mode: standalone",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "manifest-theme-color",
+      "passed": true,
+      "message": "Theme color: #667eea",
+      "timestamp": "2025-10-18T16:48:26.521Z"
+    },
+    {
+      "name": "sw-exists",
+      "passed": true,
+      "message": "Service worker file found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "sw-install-listener",
+      "passed": true,
+      "message": "install event listener found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "sw-activate-listener",
+      "passed": true,
+      "message": "activate event listener found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "sw-fetch-listener",
+      "passed": true,
+      "message": "fetch event listener found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "sw-cache-strategy",
+      "passed": true,
+      "message": "Cache strategy implemented",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "sw-offline-support",
+      "passed": true,
+      "message": "Offline support found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "offline-page-exists",
+      "passed": true,
+      "message": "Offline page found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "offline-indicator",
+      "passed": true,
+      "message": "Offline indicator found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "offline-retry",
+      "passed": true,
+      "message": "Retry functionality found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "icons-directory",
+      "passed": false,
+      "message": "Icons directory not found",
+      "timestamp": "2025-10-18T16:48:26.522Z"
+    },
+    {
+      "name": "html-manifest-link",
+      "passed": true,
+      "message": "Manifest link found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-sw-registration",
+      "passed": true,
+      "message": "Service worker registration found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-meta-apple-mobile-web-app-capable",
+      "passed": true,
+      "message": "Meta tag apple-mobile-web-app-capable found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-meta-apple-mobile-web-app-status-bar-style",
+      "passed": true,
+      "message": "Meta tag apple-mobile-web-app-status-bar-style found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-meta-mobile-web-app-capable",
+      "passed": true,
+      "message": "Meta tag mobile-web-app-capable found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-meta-theme-color",
+      "passed": true,
+      "message": "Meta tag theme-color found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "html-install-button",
+      "passed": true,
+      "message": "Install button found",
+      "timestamp": "2025-10-18T16:48:26.523Z"
+    },
+    {
+      "name": "css-install-btn",
+      "passed": true,
+      "message": "Style .install-btn found",
+      "timestamp": "2025-10-18T16:48:26.524Z"
+    },
+    {
+      "name": "css-offline",
+      "passed": true,
+      "message": "Style .offline found",
+      "timestamp": "2025-10-18T16:48:26.524Z"
+    },
+    {
+      "name": "css-pwa-status",
+      "passed": true,
+      "message": "Style .pwa-status found",
+      "timestamp": "2025-10-18T16:48:26.524Z"
+    },
+    {
+      "name": "css-install-prompt",
+      "passed": true,
+      "message": "Style .install-prompt found",
+      "timestamp": "2025-10-18T16:48:26.524Z"
+    }
+  ],
+  "summary": {
+    "total": 31,
+    "passed": 30,
+    "failed": 1
+  }
+}

@@ -1,241 +1,282 @@
-# 🗄️ MongoDB Setup Guide for JamStockAnalytics Production
+# MongoDB Configuration Guide for JamStockAnalytics
 
-## 🚀 Quick MongoDB Atlas Setup (Recommended for Production)
+This guide will help you set up and configure MongoDB for your JamStockAnalytics application.
 
-### Step 1: Create MongoDB Atlas Account
-1. **Go to [MongoDB Atlas](https://cloud.mongodb.com)**
-2. **Sign up** with your email or Google account
-3. **Choose the FREE tier** (M0 Sandbox) - Perfect for development and small production apps
+## Table of Contents
+- [Quick Start](#quick-start)
+- [Environment Configuration](#environment-configuration)
+- [MongoDB Atlas Setup](#mongodb-atlas-setup)
+- [Local MongoDB Setup](#local-mongodb-setup)
+- [Database Models](#database-models)
+- [Performance Optimization](#performance-optimization)
+- [Security Configuration](#security-configuration)
+- [Monitoring and Maintenance](#monitoring-and-maintenance)
+- [Troubleshooting](#troubleshooting)
 
-### Step 2: Create Your First Cluster
-1. **Click "Build a Database"**
-2. **Choose "M0 Sandbox" (FREE)**
-3. **Select Cloud Provider:**
-   - AWS (Recommended)
-   - Google Cloud
-   - Azure
-4. **Choose Region:** Select closest to your users
-5. **Cluster Name:** `jamstockanalytics-cluster`
-6. **Click "Create"**
+## Quick Start
 
-### Step 3: Set Up Database Access
-1. **Go to "Database Access" in the left menu**
-2. **Click "Add New Database User"**
-3. **Authentication Method:** Password
-4. **Username:** `jamstockanalytics-user`
-5. **Password:** Generate secure password (save it!)
-6. **Database User Privileges:** "Read and write to any database"
-7. **Click "Add User"**
+1. **Set up environment variables:**
+   ```bash
+   cp env.example .env
+   # Edit .env with your MongoDB connection string
+   ```
 
-### Step 4: Configure Network Access
-1. **Go to "Network Access" in the left menu**
-2. **Click "Add IP Address"**
-3. **For Production:** Click "Allow Access from Anywhere" (0.0.0.0/0)
-4. **For Development:** Add your current IP address
-5. **Click "Confirm"**
+2. **Run the setup script:**
+   ```bash
+   node scripts/mongodb-setup.js
+   ```
 
-### Step 5: Get Your Connection String
-1. **Go to "Database" in the left menu**
-2. **Click "Connect" on your cluster**
-3. **Choose "Connect your application"**
-4. **Driver:** Node.js
-5. **Version:** 4.1 or later
-6. **Copy the connection string**
+3. **Start your application:**
+   ```bash
+   npm start
+   ```
 
-### Step 6: Update Your Connection String
-Replace the connection string with your actual credentials:
+## Environment Configuration
 
+### Required Environment Variables
+
+Add these to your `.env` file:
+
+```env
+# MongoDB Atlas (Cloud) - Recommended for production
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/jamstockanalytics?retryWrites=true&w=majority
+
+# Local MongoDB (Development)
+# MONGODB_URI=mongodb://localhost:27017/jamstockanalytics
+
+# MongoDB Configuration Options
+MONGODB_DB_NAME=jamstockanalytics
+MONGODB_MAX_POOL_SIZE=10
+MONGODB_MIN_POOL_SIZE=5
+MONGODB_MAX_IDLE_TIME_MS=30000
+MONGODB_CONNECT_TIMEOUT_MS=10000
+MONGODB_SOCKET_TIMEOUT_MS=45000
+MONGODB_SERVER_SELECTION_TIMEOUT_MS=5000
 ```
-mongodb+srv://jamstockanalytics-user:YOUR_PASSWORD@jamstockanalytics-cluster.xxxxx.mongodb.net/jamstockanalytics?retryWrites=true&w=majority
+
+### Connection String Format
+
+**MongoDB Atlas (Cloud):**
+```
+mongodb+srv://<username>:<password>@<cluster-url>/<database>?retryWrites=true&w=majority
 ```
 
-## 🔧 Configure for Render.com Deployment
+**Local MongoDB:**
+```
+mongodb://localhost:27017/<database>
+```
 
-### Step 1: Add to Render Environment Variables
-1. **Go to your Render.com dashboard**
-2. **Select your JamStockAnalytics service**
-3. **Go to "Environment" tab**
-4. **Add new environment variable:**
-   - **Key:** `MONGODB_URI`
-   - **Value:** Your MongoDB Atlas connection string
+## MongoDB Atlas Setup
 
-### Step 2: Test Your Connection
-Your app will automatically connect to MongoDB when deployed. The connection is tested in the health check endpoint.
+### 1. Create MongoDB Atlas Account
+1. Go to [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Sign up for a free account
+3. Create a new cluster (M0 Sandbox is free)
 
-## 📊 Database Collections (Auto-Created)
+### 2. Configure Database Access
+1. Go to "Database Access" in the left sidebar
+2. Click "Add New Database User"
+3. Create a user with read/write permissions
+4. Save the username and password
 
-Your application will automatically create these collections:
+### 3. Configure Network Access
+1. Go to "Network Access" in the left sidebar
+2. Click "Add IP Address"
+3. Add your current IP address or use `0.0.0.0/0` for all IPs (less secure)
 
-### 1. **users** Collection
+### 4. Get Connection String
+1. Go to "Clusters" in the left sidebar
+2. Click "Connect" on your cluster
+3. Choose "Connect your application"
+4. Copy the connection string
+5. Replace `<password>` with your database user password
+
+## Local MongoDB Setup
+
+### Windows
+1. Download MongoDB Community Server from [mongodb.com](https://www.mongodb.com/try/download/community)
+2. Install MongoDB
+3. Start MongoDB service:
+   ```cmd
+   net start MongoDB
+   ```
+
+### macOS (using Homebrew)
+```bash
+brew tap mongodb/brew
+brew install mongodb-community
+brew services start mongodb/brew/mongodb-community
+```
+
+### Linux (Ubuntu/Debian)
+```bash
+# Import MongoDB public GPG key
+wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+
+# Create list file for MongoDB
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+
+# Update package database
+sudo apt-get update
+
+# Install MongoDB
+sudo apt-get install -y mongodb-org
+
+# Start MongoDB
+sudo systemctl start mongod
+sudo systemctl enable mongod
+```
+
+## Database Models
+
+### User Model
+- **Collection:** `users`
+- **Purpose:** Store user accounts and profiles
+- **Key Fields:** email, password, profile, portfolio, watchlist
+- **Indexes:** email (unique), createdAt, portfolio holdings
+
+### MarketData Model
+- **Collection:** `marketdata`
+- **Purpose:** Store stock market data and AI analysis
+- **Key Fields:** symbol, currentPrice, change, aiAnalysis
+- **Indexes:** symbol+lastUpdated, sector+changePercentage, AI recommendations
+
+### News Model
+- **Collection:** `news`
+- **Purpose:** Store news articles and sentiment analysis
+- **Key Fields:** title, summary, sentiment, symbols, aiAnalysis
+- **Indexes:** publishedAt, symbols, sentiment, text search
+
+## Performance Optimization
+
+### Indexes
+The application automatically creates optimized indexes for:
+- User authentication and queries
+- Market data lookups and sorting
+- News search and filtering
+- AI analysis queries
+
+### Connection Pooling
+- **Max Pool Size:** 10 connections (configurable)
+- **Min Pool Size:** 5 connections (configurable)
+- **Connection Timeout:** 10 seconds
+- **Socket Timeout:** 45 seconds
+
+### Query Optimization
+- Use compound indexes for complex queries
+- Implement pagination for large datasets
+- Use projection to limit returned fields
+- Enable query profiling in development
+
+## Security Configuration
+
+### Authentication
+- Use strong passwords for database users
+- Enable MongoDB authentication
+- Use environment variables for credentials
+
+### Network Security
+- Restrict IP access in production
+- Use SSL/TLS for connections
+- Enable MongoDB encryption at rest
+
+### Data Validation
+- Schema validation in Mongoose models
+- Input sanitization in API routes
+- Regular security audits
+
+## Monitoring and Maintenance
+
+### Health Checks
 ```javascript
-{
-  _id: ObjectId,
-  email: String,
-  firstName: String,
-  lastName: String,
-  profile: {
-    avatar: String,
-    bio: String,
-    investmentExperience: String,
-    riskTolerance: String
-  },
-  portfolio: {
-    totalValue: Number,
-    holdings: Array
-  },
-  createdAt: Date,
-  updatedAt: Date
-}
+// Check database health
+const health = await DatabaseService.healthCheck();
+console.log('Database Status:', health.status);
 ```
 
-### 2. **marketdata** Collection
+### Database Statistics
 ```javascript
-{
-  _id: ObjectId,
-  symbol: String,
-  name: String,
-  currentPrice: Number,
-  change: Number,
-  changePercentage: Number,
-  volume: Number,
-  sector: String,
-  aiAnalysis: {
-    recommendation: String,
-    confidence: Number,
-    sentiment: String
-  },
-  lastUpdated: Date
-}
+// Get database stats
+const stats = await DatabaseService.getDatabaseStats();
+console.log('Collections:', stats.collections);
+console.log('Documents:', stats.objects);
 ```
 
-### 3. **news** Collection
-```javascript
-{
-  _id: ObjectId,
-  title: String,
-  summary: String,
-  source: String,
-  publishedAt: Date,
-  symbols: Array,
-  sentiment: String,
-  priority: String
-}
+### Regular Maintenance
+1. **Monitor disk usage**
+2. **Check index performance**
+3. **Review slow queries**
+4. **Backup data regularly**
+5. **Update MongoDB version**
+
+## Troubleshooting
+
+### Common Issues
+
+**Connection Timeout:**
 ```
-
-### 4. **portfolios** Collection
-```javascript
-{
-  _id: ObjectId,
-  userId: ObjectId,
-  holdings: Array,
-  totalValue: Number,
-  totalGain: Number,
-  lastUpdated: Date
-}
+Error: connect ETIMEDOUT
 ```
+- Check network connectivity
+- Verify MongoDB server is running
+- Check firewall settings
 
-## 🔍 Database Indexes (Auto-Created)
-
-Your application automatically creates these indexes for optimal performance:
-
-```javascript
-// Users collection
-db.users.createIndex({ "email": 1 }, { unique: true })
-db.users.createIndex({ "createdAt": -1 })
-
-// Market data collection
-db.marketdata.createIndex({ "symbol": 1, "lastUpdated": -1 })
-db.marketdata.createIndex({ "sector": 1, "changePercentage": -1 })
-
-// News collection
-db.news.createIndex({ "publishedAt": -1 })
-db.news.createIndex({ "symbols": 1 })
+**Authentication Failed:**
 ```
-
-## 🚨 Important Security Notes
-
-### 1. **Password Security**
-- Use a strong, unique password for your database user
-- Store it securely (password manager recommended)
-- Never commit passwords to your code repository
-
-### 2. **Network Access**
-- For production: Allow access from anywhere (0.0.0.0/0)
-- For development: Restrict to your IP address
-- Monitor access logs regularly
-
-### 3. **Connection String Security**
-- Never share your connection string publicly
-- Use environment variables in production
-- Rotate passwords regularly
-
-## 🔧 Troubleshooting
-
-### Common Issues:
-
-**1. Connection Timeout**
-- Check your network access settings
-- Verify your IP address is whitelisted
-- Ensure your connection string is correct
-
-**2. Authentication Failed**
+Error: Authentication failed
+```
 - Verify username and password
-- Check if user has proper permissions
-- Ensure database name is correct
+- Check user permissions
+- Ensure authSource is correct
 
-**3. SSL/TLS Issues**
-- MongoDB Atlas requires SSL connections
-- Your connection string should include SSL parameters
-- Check your Node.js version (requires 4.1+)
-
-### Testing Your Connection:
-
-**1. Health Check Endpoint**
+**Index Creation Failed:**
 ```
-GET https://your-app.onrender.com/api/health
+Error: Index creation failed
+```
+- Check available disk space
+- Verify collection permissions
+- Review index specifications
+
+### Debug Mode
+Enable MongoDB debug logging:
+```javascript
+mongoose.set('debug', true);
 ```
 
-**2. Database Status**
-Check your Render logs for database connection status.
+### Connection State Check
+```javascript
+// Check connection state
+const states = {
+  0: 'disconnected',
+  1: 'connected',
+  2: 'connecting',
+  3: 'disconnecting'
+};
+console.log('Connection state:', states[mongoose.connection.readyState]);
+```
 
-## 📈 Monitoring Your Database
+## Production Checklist
 
-### 1. **MongoDB Atlas Dashboard**
-- Monitor database performance
-- View connection metrics
-- Check storage usage
-- Monitor query performance
-
-### 2. **Application Logs**
-- Check Render.com logs for database errors
-- Monitor connection status
-- Track query performance
-
-### 3. **Health Checks**
-Your application includes automatic health checks for:
-- Database connectivity
-- Collection access
-- Index performance
-
-## 🎯 Production Checklist
-
-- [ ] MongoDB Atlas account created
-- [ ] Cluster created and running
+- [ ] MongoDB Atlas cluster configured
 - [ ] Database user created with proper permissions
-- [ ] Network access configured (0.0.0.0/0 for production)
-- [ ] Connection string obtained
-- [ ] Environment variable set in Render.com
-- [ ] Connection tested via health check endpoint
-- [ ] Database collections created automatically
-- [ ] Indexes created for performance
-- [ ] Monitoring set up
+- [ ] Network access restricted to application servers
+- [ ] SSL/TLS enabled for connections
+- [ ] Environment variables secured
+- [ ] Connection pooling optimized
+- [ ] Indexes created and verified
+- [ ] Monitoring and alerting configured
+- [ ] Backup strategy implemented
+- [ ] Security audit completed
 
-## 🚀 You're Ready!
+## Support
 
-Once you complete this setup:
-1. Your MongoDB database will be live and accessible
-2. Your JamStockAnalytics app will automatically connect
-3. All collections and indexes will be created
-4. Your production app will be fully functional
+For additional help:
+1. Check MongoDB documentation: https://docs.mongodb.com/
+2. Review application logs
+3. Run the setup script: `node scripts/mongodb-setup.js`
+4. Contact support team
 
-**Your MongoDB database is now ready for production! 🎉**
+---
+
+**Last Updated:** $(date)
+**Version:** 1.0.0

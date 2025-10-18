@@ -1,263 +1,356 @@
-# Docker Hub Webhook Integration Guide
-
-This guide explains how to set up automated deployments for JamStockAnalytics using Docker Hub webhooks.
+# JamStockAnalytics Webhook Setup Guide
 
 ## Overview
 
-The webhook integration automatically deploys your application when a new Docker image is pushed to Docker Hub. This includes:
-
-- **Webhook Handler**: Receives notifications from Docker Hub
-- **Automated Deployment**: Pulls latest image and updates running containers
-- **Health Checks**: Verifies deployment success
-- **Rollback Support**: Automatic rollback on deployment failure
-- **Backup System**: Creates backups before deployment
-
-## Architecture
-
-```
-Docker Hub → Webhook Handler → Deployment Script → Docker Container
-     ↓              ↓                ↓                    ↓
-  Push Image    Receive Event    Update Container    Verify Health
-```
+This guide provides comprehensive instructions for setting up the JamStockAnalytics webhook infrastructure as specified in CONTEXT.md. The webhook system enables automated deployments and real-time data synchronization.
 
 ## Prerequisites
 
-- Docker and Docker Compose installed
-- Docker Hub repository with webhook support
-- Access to the server where you want to deploy
+- Node.js 18+ installed
+- npm 8+ installed
+- Git repository access
+- Render.com account (for deployment)
+- GitHub account (for workflows)
 
 ## Quick Setup
 
-### 1. Run the Setup Script
+### 1. Automated Setup (Recommended)
 
-```powershell
-# Windows PowerShell
-.\scripts\setup-webhook.ps1 -WebhookSecret "your-secure-secret" -DockerHubUsername "jamstockanalytics" -DockerHubRepository "jamstockanalytics"
-```
-
+**For Linux/macOS:**
 ```bash
-# Linux/macOS
-chmod +x scripts/setup-webhook.sh
-./scripts/setup-webhook.sh
+chmod +x webhook-setup.sh
+./webhook-setup.sh
 ```
 
-### 2. Configure Docker Hub Webhook
+**For Windows:**
+```powershell
+.\webhook-setup.ps1
+```
 
-1. Go to your Docker Hub repository
-2. Navigate to **Webhooks** tab
-3. Click **Create Webhook**
-4. Configure:
-   - **Name**: `Production Deployment`
-   - **Webhook URL**: `http://YOUR_SERVER_IP:3000/webhook`
-   - **Secret**: Use the secret from setup script
-   - **Events**: Select "Push to repository"
+### 2. Manual Setup
 
-### 3. Test the Integration
+Follow the step-by-step instructions below for manual setup.
 
-1. Push a new image to Docker Hub:
-   ```bash
-   docker build -t jamstockanalytics/jamstockanalytics:latest .
-   docker push jamstockanalytics/jamstockanalytics:latest
-   ```
+## File Structure
 
-2. Monitor the deployment:
-   ```bash
-   # Check webhook logs
-   docker logs jamstockanalytics-webhook
-   
-   # Check application status
-   docker ps
-   curl http://localhost/
-   ```
+The webhook setup includes the following files:
 
-## Manual Setup
+```
+├── webhook-handler.js              # Main webhook service
+├── webhook-package.json            # Webhook service dependencies
+├── webhook-test.js                 # Integration tests
+├── webhook-setup.sh                # Linux/macOS setup script
+├── webhook-setup.ps1               # Windows setup script
+├── Dockerfile.webhook              # Docker configuration
+├── docker-compose.webhook.yml      # Docker Compose configuration
+├── render-webhook.yaml             # Render deployment config
+├── .github/workflows/
+│   ├── webhook-deploy.yml          # Deployment workflow
+│   └── webhook-monitor.yml         # Monitoring workflow
+└── WEBHOOK_INTEGRATION.md          # Integration documentation
+```
 
-If you prefer manual setup, follow these steps:
+## Step-by-Step Setup
 
 ### 1. Environment Configuration
 
-Create `.env.webhook` file:
-```env
-WEBHOOK_SECRET=your-secure-secret-here
-DOCKER_HUB_USERNAME=jamstockanalytics
-DOCKER_HUB_REPOSITORY=jamstockanalytics
-DOCKER_IMAGE=jamstockanalytics/jamstockanalytics
-CONTAINER_NAME=jamstockanalytics-web
-COMPOSE_FILE=docker-compose.prod.yml
+Create a `.env` file from the template:
+
+```bash
+cp env.example .env
 ```
 
-### 2. Build Webhook Handler
+Update the following variables in `.env`:
+
+```bash
+# Webhook Configuration
+WEBHOOK_SECRET=your-secure-webhook-secret
+WEBHOOK_PORT=3000
+WEBHOOK_URL=https://jamstockanalytics-webhook.onrender.com
+MAIN_APP_URL=https://jamstockanalytics-production.onrender.com
+```
+
+### 2. Install Dependencies
+
+```bash
+# Install main app dependencies
+npm install
+
+# Install webhook service dependencies
+npm install --prefix webhook
+```
+
+### 3. GitHub Actions Setup
+
+The webhook system includes two GitHub Actions workflows:
+
+#### Webhook Deployment Workflow (`.github/workflows/webhook-deploy.yml`)
+
+**Triggers:**
+- Push to master/main branches
+- Changes to webhook-related files
+- Manual workflow dispatch
+
+**Features:**
+- Automated testing
+- Render deployment
+- Health verification
+- Slack notifications
+
+#### Webhook Monitoring Workflow (`.github/workflows/webhook-monitor.yml`)
+
+**Triggers:**
+- Scheduled every 5 minutes
+- Manual workflow dispatch
+
+**Features:**
+- Health checks
+- Webhook functionality tests
+- Performance monitoring
+- Alert notifications
+
+### 4. Docker Setup (Optional)
+
+#### Build Webhook Docker Image
 
 ```bash
 docker build -f Dockerfile.webhook -t jamstockanalytics-webhook .
 ```
 
-### 3. Start Webhook Handler
+#### Run with Docker Compose
 
 ```bash
 docker-compose -f docker-compose.webhook.yml up -d
 ```
 
-### 4. Configure Docker Hub
+#### Monitor Webhook Service
 
-Add webhook in Docker Hub repository settings:
-- **URL**: `http://YOUR_SERVER_IP:3000/webhook`
-- **Secret**: Your webhook secret
-- **Events**: Push to repository
-
-## File Structure
-
-```
-├── .github/workflows/
-│   └── docker-deploy.yml          # GitHub Actions CI/CD
-├── scripts/
-│   ├── webhook-handler.js         # Node.js webhook receiver
-│   ├── deploy-on-webhook.sh      # Linux deployment script
-│   ├── deploy-on-webhook.ps1     # Windows deployment script
-│   └── setup-webhook.ps1         # Setup automation
-├── docker-compose.webhook.yml     # Webhook handler service
-├── Dockerfile.webhook             # Webhook handler container
-└── WEBHOOK_SETUP_GUIDE.md        # This guide
-```
-
-## Configuration Options
-
-### Webhook Handler Settings
-
-| Environment Variable | Description | Default |
-|---------------------|-------------|---------|
-| `WEBHOOK_PORT` | Port for webhook handler | `3000` |
-| `WEBHOOK_SECRET` | Secret for webhook verification | Required |
-| `NODE_ENV` | Node.js environment | `production` |
-
-### Deployment Settings
-
-| Variable | Description | Default |
-|-----------|-------------|---------|
-| `DOCKER_IMAGE` | Docker image to deploy | `jamstockanalytics/jamstockanalytics` |
-| `CONTAINER_NAME` | Container name | `jamstockanalytics-web` |
-| `COMPOSE_FILE` | Docker Compose file | `docker-compose.prod.yml` |
-
-## Security Considerations
-
-### Webhook Security
-- Always use a strong, unique webhook secret
-- Verify webhook signatures in production
-- Use HTTPS for webhook URLs in production
-- Restrict webhook handler access to trusted networks
-
-### Container Security
-- Run containers as non-root user
-- Use read-only filesystems where possible
-- Regularly update base images
-- Monitor container logs for suspicious activity
-
-## Monitoring and Logs
-
-### View Webhook Logs
 ```bash
-docker logs jamstockanalytics-webhook -f
+docker-compose -f docker-compose.webhook.yml logs -f webhook
 ```
 
-### Check Deployment Status
+### 5. Render Deployment
+
+#### Deploy Webhook Service
+
 ```bash
-# Container status
-docker ps -a
+# Using Render CLI
+render deploy --service jamstockanalytics-webhook
 
-# Application health
-curl http://localhost/health
-
-# Docker Compose status
-docker-compose -f docker-compose.prod.yml ps
+# Or using the configuration file
+render deploy --config render-webhook.yaml
 ```
 
-### Health Checks
-- **Webhook Handler**: `http://localhost:3000/health`
-- **Application**: `http://localhost/`
-- **Container Health**: Docker health checks
+#### Environment Variables on Render
+
+Set the following environment variables in your Render dashboard:
+
+- `WEBHOOK_SECRET`: Your secure webhook secret
+- `MAIN_APP_URL`: URL of your main application
+- `NODE_ENV`: production
+- `WEBHOOK_PORT`: 3000
+
+## Testing
+
+### 1. Local Testing
+
+```bash
+# Test webhook handler syntax
+node -c webhook-handler.js
+
+# Run integration tests
+node webhook-test.js
+```
+
+### 2. Health Checks
+
+```bash
+# Check webhook health
+curl https://jamstockanalytics-webhook.onrender.com/health
+
+# Check main app health
+curl https://jamstockanalytics-production.onrender.com/api/health
+```
+
+### 3. Webhook Functionality Test
+
+```bash
+# Test webhook endpoint
+curl -X POST https://jamstockanalytics-webhook.onrender.com/webhook \
+  -H "Content-Type: application/json" \
+  -H "X-Hub-Signature-256: sha256=<signature>" \
+  -d '{"event": "test", "data": {"test": true}}'
+```
+
+## Configuration Files
+
+### 1. Render Configuration (`render-webhook.yaml`)
+
+```yaml
+services:
+  - type: web
+    name: jamstockanalytics-webhook
+    env: node
+    plan: free
+    buildCommand: echo "Dependencies will be installed automatically by Render"
+    startCommand: node webhook-handler.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: WEBHOOK_PORT
+        value: 3000
+      - key: WEBHOOK_SECRET
+        sync: false
+      - key: MAIN_APP_URL
+        value: https://jamstockanalytics-production.onrender.com
+    healthCheckPath: /health
+    autoDeploy: true
+    branch: master
+```
+
+### 2. Docker Configuration (`Dockerfile.webhook`)
+
+```dockerfile
+FROM node:18-alpine
+WORKDIR /app
+COPY webhook-package.json package.json
+COPY package-lock.json ./
+RUN npm ci --only=production
+COPY webhook-handler.js ./
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S webhook -u 1001
+RUN chown -R webhook:nodejs /app
+USER webhook
+EXPOSE 3000
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3000/health || exit 1
+CMD ["node", "webhook-handler.js"]
+```
+
+### 3. Docker Compose (`docker-compose.webhook.yml`)
+
+```yaml
+version: '3.8'
+services:
+  webhook:
+    build:
+      context: .
+      dockerfile: Dockerfile.webhook
+    container_name: jamstockanalytics-webhook
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - WEBHOOK_PORT=3000
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET}
+      - MAIN_APP_URL=${MAIN_APP_URL}
+    volumes:
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+## Monitoring and Maintenance
+
+### 1. Health Monitoring
+
+The webhook system includes comprehensive health monitoring:
+
+- **Health Check Endpoint**: `/health`
+- **Automated Monitoring**: Every 5 minutes via GitHub Actions
+- **Alert Notifications**: Slack integration for failures
+
+### 2. Logs
+
+```bash
+# View webhook logs
+docker-compose -f docker-compose.webhook.yml logs -f webhook
+
+# View Render logs
+render logs --service jamstockanalytics-webhook
+```
+
+### 3. Performance Monitoring
+
+The monitoring workflow includes:
+- Response time testing
+- Health check validation
+- Webhook functionality verification
+- Performance metrics collection
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Webhook not receiving events**
-   - Check webhook URL is accessible
-   - Verify webhook secret matches
-   - Check Docker Hub webhook configuration
+1. **Webhook Signature Mismatch**
+   ```bash
+   # Verify signature generation
+   echo -n '{"event":"test"}' | openssl dgst -sha256 -hmac "your-secret"
+   ```
 
-2. **Deployment fails**
-   - Check Docker daemon is running
-   - Verify image exists in Docker Hub
-   - Check deployment script permissions
+2. **Connection Timeouts**
+   ```bash
+   # Test connectivity
+   curl -v https://jamstockanalytics-webhook.onrender.com/health
+   ```
 
-3. **Container won't start**
-   - Check port conflicts
-   - Verify Docker Compose configuration
-   - Check container logs
+3. **Docker Build Failures**
+   ```bash
+   # Check Docker logs
+   docker build -f Dockerfile.webhook -t jamstockanalytics-webhook . --no-cache
+   ```
 
 ### Debug Commands
 
 ```bash
-# Check webhook handler status
-docker ps | grep webhook
+# Test webhook locally
+node webhook-handler.js
 
-# View webhook logs
-docker logs jamstockanalytics-webhook
+# Run integration tests
+node webhook-test.js
 
-# Test webhook endpoint
-curl -X POST http://localhost:3000/webhook \
-  -H "Content-Type: application/json" \
-  -d '{"test": "data"}'
-
-# Check deployment script
-docker exec jamstockanalytics-webhook ls -la /app/scripts/
+# Check GitHub Actions
+gh run list --workflow=webhook-deploy.yml
+gh run list --workflow=webhook-monitor.yml
 ```
 
-## Advanced Configuration
+## Security Considerations
 
-### Custom Deployment Scripts
+1. **Webhook Secret**: Use a strong, unique secret for webhook validation
+2. **Environment Variables**: Never commit secrets to version control
+3. **Network Security**: Use HTTPS for all webhook communications
+4. **Access Control**: Limit webhook endpoint access to trusted sources
 
-You can customize deployment behavior by modifying:
-- `scripts/deploy-on-webhook.sh` (Linux)
-- `scripts/deploy-on-webhook.ps1` (Windows)
+## Deployment Checklist
 
-### Multiple Environments
-
-For multiple environments, create separate configurations:
-```bash
-# Development
-docker-compose -f docker-compose.webhook.yml -f docker-compose.dev.yml up -d
-
-# Production
-docker-compose -f docker-compose.webhook.yml -f docker-compose.prod.yml up -d
-```
-
-### Load Balancing
-
-For high availability, use multiple webhook handlers behind a load balancer:
-```yaml
-# docker-compose.webhook.yml
-services:
-  webhook-handler-1:
-    # ... configuration
-  webhook-handler-2:
-    # ... configuration
-  nginx:
-    # Load balancer configuration
-```
+- [ ] Environment variables configured
+- [ ] Dependencies installed
+- [ ] GitHub Actions workflows set up
+- [ ] Docker configuration tested (if using)
+- [ ] Render deployment configured
+- [ ] Health checks working
+- [ ] Webhook functionality tested
+- [ ] Monitoring configured
+- [ ] Documentation updated
 
 ## Support
 
-For issues and questions:
-1. Check the logs: `docker logs jamstockanalytics-webhook`
-2. Review this guide
-3. Check Docker Hub webhook configuration
-4. Verify network connectivity
+For webhook setup issues:
 
-## Security Best Practices
+1. Check the logs: `docker-compose -f docker-compose.webhook.yml logs`
+2. Verify configuration: `node -c webhook-handler.js`
+3. Test functionality: `node webhook-test.js`
+4. Review GitHub Actions: Check workflow runs
+5. Contact development team
 
-1. **Use HTTPS**: Always use HTTPS for webhook URLs in production
-2. **Rotate Secrets**: Regularly rotate webhook secrets
-3. **Network Security**: Restrict access to webhook handler
-4. **Monitor Logs**: Regularly review webhook and deployment logs
-5. **Backup Strategy**: Implement proper backup and recovery procedures
+## Additional Resources
+
+- [WEBHOOK_INTEGRATION.md](./WEBHOOK_INTEGRATION.md) - Integration documentation
+- [CONTEXT.md](./CONTEXT.md) - Project specifications
+- [Render Documentation](https://render.com/docs) - Deployment platform
+- [GitHub Actions Documentation](https://docs.github.com/en/actions) - Workflow automation

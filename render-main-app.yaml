@@ -3,7 +3,7 @@ services:
     name: jamstockanalytics-app
     env: node
     plan: free
-    buildCommand: cd JamStockAnalytics && npm install && npm run build:web:optimized
+    buildCommand: cd JamStockAnalytics && npm run build:web:optimized
     startCommand: cd JamStockAnalytics && npx serve web-build -p $PORT
     envVars:
       - key: NODE_ENV

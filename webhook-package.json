@@ -1,15 +1,43 @@
 {
   "name": "jamstockanalytics-webhook",
   "version": "1.0.0",
-  "description": "Webhook handler for JamStockAnalytics",
+  "description": "Webhook handler for JamStockAnalytics automated deployments and real-time updates",
   "main": "webhook-handler.js",
   "scripts": {
-    "start": "node webhook-handler.js"
+    "start": "node webhook-handler.js",
+    "dev": "nodemon webhook-handler.js",
+    "test": "jest"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "morgan": "^1.10.0",
+    "dotenv": "^16.3.1",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0",
+    "supertest": "^6.3.3"
   },
   "engines": {
-    "node": "18.x"
-  }
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "webhook",
+    "jamaica",
+    "stock-exchange",
+    "jse",
+    "ai",
+    "market-analysis",
+    "financial",
+    "investment",
+    "automation",
+    "deployment"
+  ],
+  "author": "JamStockAnalytics Team",
+  "license": "MIT"
 }
