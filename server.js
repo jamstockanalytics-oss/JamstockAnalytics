@@ -323,34 +323,48 @@ app.use(errorHandler);
 // Initialize services
 async function initializeServices() {
   try {
+    console.log('🔄 Initializing services...');
+    
+    // Connect to database first
     await DatabaseService.connect();
+    console.log('✅ Database connected successfully');
+    
+    // Initialize services
     await MarketDataService.initialize();
+    console.log('✅ Market Data Service initialized');
+    
     await AIService.initialize();
+    console.log('✅ AI Service initialized');
+    
     await NewsService.initialize();
+    console.log('✅ News Service initialized');
     
     // Initialize real-time service
     const realtimeService = new RealtimeService(io);
     app.locals.realtimeService = realtimeService;
+    console.log('✅ Real-time Service initialized');
     
     // Initialize sentiment analysis service
     const sentimentService = new SentimentAnalysisService();
     app.locals.sentimentService = sentimentService;
+    setupSentimentEventHandlers(sentimentService, io);
+    console.log('✅ Sentiment Analysis Service initialized');
     
     // Initialize Hugging Face service
     const huggingFaceService = new HuggingFaceService();
     app.locals.huggingFaceService = huggingFaceService;
-    
-    // Set up sentiment analysis event handlers
-    setupSentimentEventHandlers(sentimentService, io);
-    
-    // Set up Hugging Face event handlers
     setupHuggingFaceEventHandlers(huggingFaceService, io);
+    console.log('✅ Hugging Face Service initialized');
     
     // Start background jobs
     startBackgroundJobs();
+    console.log('✅ Background jobs started');
+    
+    console.log('🎉 All services initialized successfully!');
     
   } catch (error) {
     console.error('❌ Failed to initialize services:', error);
+    console.error('💡 Check your database connection and environment variables');
     process.exit(1);
   }
 }
