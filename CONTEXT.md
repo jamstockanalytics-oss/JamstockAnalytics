@@ -4509,45 +4509,53 @@ git push origin master
 # 6. ⏳ Deploy to GitHub Pages
 ```
 
-**🔄 Testing Updated Authentication:**
-- **Status**: GitHub secrets updated
-- **Action**: Triggering new build to test authentication
-- **Expected**: Docker Hub login should now succeed
+**❌ New Error Detected:**
+- **Error**: `push access denied, repository does not exist or may require authorization`
+- **Issue**: Docker Hub repository access problem
+- **Solution**: Fix repository permissions or create repository
 
-#### Docker Hub Authentication Fix
+#### Docker Hub Repository Access Fix
 
-**🔧 Problem:** GitHub secrets are incorrect or missing
+**🔧 Problem:** Repository doesn't exist or insufficient permissions
 
 **✅ Solution Steps:**
 
-**1. Verify GitHub Secrets:**
+**1. Check Docker Hub Repository:**
+
+**Option A: Create Repository in Docker Hub**
 ```bash
-# Go to: https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly/settings/secrets/actions
-# Check these secrets exist:
-DOCKER_USERNAME=your-docker-hub-username
-DOCKER_PASSWORD=your-docker-hub-password
+# 1. Go to https://hub.docker.com
+# 2. Click "Create Repository"
+# 3. Name: jamstockanalytics (or your preferred name)
+# 4. Visibility: Public
+# 5. Description: "AI-Powered Jamaica Stock Exchange Market Analysis"
 ```
 
-**2. Common Issues:**
-- **Wrong username**: Make sure it's your Docker Hub username (not email)
-- **Wrong password**: Use Docker Hub password or access token
-- **Missing secrets**: Both DOCKER_USERNAME and DOCKER_PASSWORD must be set
-- **Case sensitivity**: Secrets are case-sensitive
-
-**3. Docker Hub Access Token (Recommended):**
+**Option B: Check Repository Name Match**
 ```bash
-# Instead of password, use Docker Hub access token:
-# 1. Go to Docker Hub → Account Settings → Security
-# 2. Create new access token
-# 3. Use token as DOCKER_PASSWORD in GitHub secrets
+# Verify the repository name in GitHub Actions matches your Docker Hub repository
+# Current workflow uses: jamstockanalytics
+# Make sure your Docker Hub repository is named exactly: jamstockanalytics
 ```
 
-**4. Test Authentication Locally:**
+**2. Update GitHub Actions Workflow:**
+```yaml
+# The workflow should use your exact Docker Hub username and repository name
+tags: ${{ secrets.DOCKER_USERNAME }}/jamstockanalytics:latest
+```
+
+**3. Verify Repository Permissions:**
 ```bash
-# Test Docker Hub login locally
-docker login
-# Enter your Docker Hub credentials
-# If successful, your GitHub secrets should work
+# Make sure you own the repository or have push access
+# Check repository settings in Docker Hub
+# Verify it's not a private repository (unless you have proper access)
+```
+
+**4. Test Repository Access Locally:**
+```bash
+# Test if you can push to your repository
+docker tag jamstockanalytics:latest your-username/jamstockanalytics:latest
+docker push your-username/jamstockanalytics:latest
 ```
 
 ### 17.11. Success Metrics
