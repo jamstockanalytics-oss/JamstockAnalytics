@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: jamstockanalytics-webhook
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node webhook-handler.js
+    envVars:
+      - key: WEBHOOK_PORT
+        value: 10000
+      - key: WEBHOOK_SECRET
+        value: your-webhook-secret
+      - key: NODE_ENV
+        value: production
