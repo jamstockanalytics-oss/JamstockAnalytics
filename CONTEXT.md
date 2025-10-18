@@ -3953,6 +3953,182 @@ docker stop jamstock-test
 docker rm jamstock-test
 ```
 
+#### Docker Connection Troubleshooting
+
+**Issue: ERR_CONNECTION_REFUSED**
+**Symptoms:**
+- Browser shows "ERR_CONNECTION_REFUSED" when accessing localhost:8081
+- curl fails with connection refused
+- Container appears to be running but not accessible
+
+**Diagnosis Steps:**
+```bash
+# 1. Check if container is running
+docker ps
+
+# 2. Check container status
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# 3. Check container logs for errors
+docker logs jamstock-test
+
+# 4. Check if port is actually listening
+netstat -an | findstr :8081
+# or on Linux/Mac:
+# netstat -an | grep :8081
+
+# 5. Test container health
+docker exec jamstock-test wget --spider http://localhost/
+```
+
+**Common Fixes:**
+
+**Fix 1: Container Not Running**
+```bash
+# Start the container
+docker run -d --name jamstock-test -p 8081:80 jamstockanalytics:test
+
+# Check if it started
+docker ps
+```
+
+**Fix 2: Port Already in Use**
+```bash
+# Check what's using port 8081
+netstat -ano | findstr :8081
+
+# Kill the process using the port (Windows)
+taskkill /PID <PID> /F
+
+# Or use a different port
+docker run -d --name jamstock-test -p 8082:80 jamstockanalytics:test
+```
+
+**Fix 3: Container Failed to Start**
+```bash
+# Check container logs
+docker logs jamstock-test
+
+# Check if image exists
+docker images jamstockanalytics
+
+# Rebuild if necessary
+docker build -t jamstockanalytics:test .
+```
+
+**Fix 4: nginx Configuration Issues**
+```bash
+# Test nginx configuration inside container
+docker exec jamstock-test nginx -t
+
+# Check nginx error logs
+docker exec jamstock-test cat /var/log/nginx/error.log
+
+# Restart nginx inside container
+docker exec jamstock-test nginx -s reload
+```
+
+**Fix 5: Windows Docker Desktop Issues**
+```bash
+# Restart Docker Desktop
+# 1. Right-click Docker Desktop icon in system tray
+# 2. Select "Restart Docker Desktop"
+# 3. Wait for restart to complete
+
+# Or restart Docker service
+net stop com.docker.service
+net start com.docker.service
+```
+
+**Fix 6: Firewall/Antivirus Blocking**
+```bash
+# Check Windows Firewall
+# 1. Go to Windows Defender Firewall
+# 2. Allow Docker Desktop through firewall
+# 3. Add exception for port 8081
+
+# Test with different port
+docker run -d --name jamstock-test -p 8080:80 jamstockanalytics:test
+```
+
+**Alternative Testing Methods:**
+```bash
+# Method 1: Test with curl (PowerShell)
+Invoke-WebRequest -Uri http://localhost:8081
+
+# Method 2: Test with wget (if available)
+wget http://localhost:8081
+
+# Method 3: Test with browser
+# Open browser and go to http://localhost:8081
+
+# Method 4: Test container internally
+docker exec jamstock-test curl http://localhost/
+```
+
+**Complete Troubleshooting Script:**
+```bash
+#!/bin/bash
+# docker-troubleshoot.sh
+
+echo "🔍 Docker Connection Troubleshooting"
+echo "=================================="
+
+# Check Docker status
+echo "📊 Docker status:"
+docker --version
+docker info | grep -i "server version"
+
+# Check running containers
+echo "📦 Running containers:"
+docker ps
+
+# Check if our container exists
+echo "🔍 Checking jamstock-test container:"
+if docker ps -a --format "table {{.Names}}" | grep -q "jamstock-test"; then
+    echo "✅ Container exists"
+    docker ps -a --filter "name=jamstock-test" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+else
+    echo "❌ Container not found"
+fi
+
+# Check port usage
+echo "🔌 Port 8081 usage:"
+netstat -an | findstr :8081
+
+# Test container health
+echo "🏥 Container health:"
+if docker ps --filter "name=jamstock-test" --format "{{.Names}}" | grep -q "jamstock-test"; then
+    echo "✅ Container is running"
+    docker exec jamstock-test wget --spider http://localhost/ 2>/dev/null && echo "✅ nginx is responding" || echo "❌ nginx not responding"
+else
+    echo "❌ Container is not running"
+fi
+
+# Test external access
+echo "🌐 Testing external access:"
+curl -f http://localhost:8081 >/dev/null 2>&1 && echo "✅ External access working" || echo "❌ External access failed"
+
+echo "🎯 Troubleshooting complete"
+```
+
+**Quick Fix Commands:**
+```bash
+# Quick restart sequence
+docker stop jamstock-test 2>/dev/null || true
+docker rm jamstock-test 2>/dev/null || true
+docker run -d --name jamstock-test -p 8081:80 jamstockanalytics:test
+sleep 5
+curl http://localhost:8081
+
+# Alternative port if 8081 is busy
+docker stop jamstock-test 2>/dev/null || true
+docker rm jamstock-test 2>/dev/null || true
+docker run -d --name jamstock-test -p 8082:80 jamstockanalytics:test
+sleep 5
+curl http://localhost:8082
+```
+
 **Verify GitHub Actions Build:**
 ```bash
 # Check GitHub Actions status
