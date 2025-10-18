@@ -1,0 +1,95 @@
+services:
+  # Main Production Application
+  - type: web
+    name: jamstockanalytics-production
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: MONGODB_URI
+        fromDatabase:
+          name: jamstockanalytics-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: jamstockanalytics-redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: CLIENT_URL
+        value: https://jamstockanalytics-oss.github.io
+      - key: BCRYPT_ROUNDS
+        value: 12
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+    healthCheckPath: /api/health
+    autoDeploy: true
+    branch: master
+    repo: https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly
+
+  # Database Service
+  - type: pserv
+    name: jamstockanalytics-db
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.mongodb
+    envVars:
+      - key: MONGO_INITDB_ROOT_USERNAME
+        value: admin
+      - key: MONGO_INITDB_ROOT_PASSWORD
+        generateValue: true
+      - key: MONGO_INITDB_DATABASE
+        value: jamstockanalytics
+
+  # Redis Cache Service
+  - type: redis
+    name: jamstockanalytics-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+  # Background Worker Service
+  - type: worker
+    name: jamstockanalytics-worker
+    env: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm run worker
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: jamstockanalytics-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: jamstockanalytics-redis
+          property: connectionString
+      - key: DEEPSEEK_API_KEY
+        sync: false
+    autoDeploy: true
+    branch: master
+    repo: https://github.com/jamstockanalytics-oss/JamstockAnalyticsWebOnly
+
+  # Monitoring Service
+  - type: web
+    name: jamstockanalytics-monitoring
+    env: docker
+    plan: starter
+    dockerfilePath: ./Dockerfile.monitoring
+    envVars:
+      - key: GRAFANA_ADMIN_PASSWORD
+        generateValue: true
+    healthCheckPath: /api/health
+    autoDeploy: false
