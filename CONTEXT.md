@@ -1893,10 +1893,10 @@ services:
 1. **Fix YAML Syntax:**
    ```yaml
    # Correct conditional syntax
-   if: ${{ secrets.EXPO_TOKEN != '' }}
+   if: ${{ secrets.DOCKER_USERNAME != '' }}
    
    # Incorrect syntax
-   if: ${{ secrets.EXPO_TOKEN }}
+   if: ${{ secrets.DOCKER_USERNAME }}
    ```
 
 2. **Fix PowerShell Syntax:**
@@ -2137,10 +2137,10 @@ git push origin master
 1. **Fix YAML Syntax:**
    ```yaml
    # ✅ Correct conditional syntax
-   if: ${{ secrets.EXPO_TOKEN != '' }}
+   if: ${{ secrets.DOCKER_USERNAME != '' }}
    
    # ❌ Incorrect syntax
-   if: ${{ secrets.EXPO_TOKEN }}
+   if: ${{ secrets.DOCKER_USERNAME }}
    ```
 
 2. **Fix PowerShell Syntax:**
@@ -2240,7 +2240,6 @@ git push --force-with-lease origin master
 2. Add required secrets:
    - `DOCKER_USERNAME`
    - `DOCKER_PASSWORD`
-   - `EXPO_TOKEN`
    - `SUPABASE_URL`
    - `SUPABASE_ANON_KEY`
 
